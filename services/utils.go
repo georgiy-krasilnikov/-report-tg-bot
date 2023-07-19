@@ -22,9 +22,10 @@ func (h *Handler) Add(s string) {
 		h.data.Event = s
 	case h.data.How == "":
 		h.data.How = s
-	case h.data.Data == "":
-		h.data.Data = s
-		fmt.Println(s)
+	case h.data.Date == "":
+		h.data.Date = s
+	case h.data.Time == "":
+		h.data.Time = s
 	case h.data.Items == nil:
 		h.data.Items, h.data.CountItems = append(h.data.Items, strings.Split(s, ", ")[0]), append(h.data.Items, strings.Split(s, ", ")[1])
 	}

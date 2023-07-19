@@ -1,9 +1,17 @@
 package services
 
+import "github.com/lukasjarosch/go-docx"
+
 type Data struct {
 	Event      string
 	How        string
-	Data       string
+	Date       string
+	Time       string
 	Items      []string
 	CountItems []string
+}
+
+type Doc struct {
+	DocX       *docx.Document
+	ReplaceMap docx.PlaceholderMap
 }
