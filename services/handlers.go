@@ -26,24 +26,30 @@ func New(botToken string) (*Handler, error) {
 func (h *Handler) Run() error {
 	upd := tg.NewUpdate(0)
 	upd.Timeout = 60
-
+	//h.Debug = true
 	upds := h.GetUpdatesChan(upd)
 
 	for u := range upds {
-		if u.Message == nil && u.CallbackQuery != nil {
-			fmt.Print(u.CallbackData())
-			h.Delete(u.CallbackQuery.Message.Chat.ID, u.CallbackQuery.Message.MessageID)
-			if err := h.Next(u.CallbackQuery.Message.Chat.ID); err != nil {
+		switch true {
+		case u.Message != nil && u.Message.Text == "/start":
+			if err := h.Start(u.Message.Chat.ID); err != nil {
 				return fmt.Errorf("failed to call func 'next': %s", err.Error())
 			}
-		}
 
-		if u.Message != nil {
-			switch u.Message.Text {
-			case "/start":
-				if err := h.Start(u.Message.Chat.ID); err != nil {
-					return fmt.Errorf("failed to call func 'next': %s", err.Error())
-				}
+		case u.Message == nil && u.CallbackQuery != nil:
+			if err := h.Next(u.CallbackQuery.Message.Chat.ID, u.CallbackData()); err != nil {
+				return fmt.Errorf("error in func 'next': %s", err.Error())
+			}
+			if err := h.Delete(u.CallbackQuery.Message.Chat.ID, u.CallbackQuery.Message.MessageID); err != nil {
+				return fmt.Errorf("failed to delete msg: %s", err.Error())
+			}
+
+		case u.Message != nil && u.Message.Text != "/start":
+			if err := h.Delete(u.Message.Chat.ID, u.Message.MessageID-1); err != nil {
+				return fmt.Errorf("failed to delete msg: %s", err.Error())
+			}
+			if err := h.Next(u.Message.Chat.ID, u.Message.Text); err != nil {
+				return fmt.Errorf("error in func 'next': %s", err.Error())
 			}
 		}
 	}
