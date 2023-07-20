@@ -19,10 +19,13 @@ func (h *Handler) Next(chatID int64, s string) error {
 	if s == "" {
 		return fmt.Errorf("s can't be empty")
 	}
-	h.Add(s)
+	if err := h.Add(s); err != nil {
+		return fmt.Errorf("failed to add data: %s", err.Error())
+	}
+	fmt.Println(h.data)
 
 	var msg tg.MessageConfig
-	
+
 	switch true {
 	case h.data.How == "":
 		msg = tg.NewMessage(chatID, "Теперь выбери, через что ты будешь выносить предметы:")
@@ -36,8 +39,10 @@ func (h *Handler) Next(chatID int64, s string) error {
 		msg = tg.NewMessage(chatID, "Теперь введи дату выноса в следующем формате: дд.мм.гггг. Пример: 31.12.2022.")
 	case h.data.Time == "":
 		msg = tg.NewMessage(chatID, "Теперь введи время выноса. Пример: 9:00 до 12:00.")
+	case h.data.Count == 0:
+		msg = tg.NewMessage(chatID, "Теперь введи количество видов предметов. Пример, если у нас 1 ящик, 2 стула, 1 стол: 3 (так как 3 разных вида предметов)")
 	case h.data.Items == nil:
-		msg = tg.NewMessage(chatID, "Теперь введи предметы, которые ты собираешься выносить. Для рапорта нужны следующие параметры: наименование предмета и его количество. Пример: Стул, 2.")
+		msg = tg.NewMessage(chatID, "Теперь введи предметы, которые ты собираешься выносить. Для рапорта нужны следующие параметры: наименование предмета и его количество. Пример: Стул, 2. Если у тебя несколько предметов, то пиши их так: Стул, 2, Стол, 1 и т.п.")
 	default:
 		msg = tg.NewMessage(chatID, "Мы сохранили данные.")
 	}
@@ -50,17 +55,13 @@ func (h *Handler) Next(chatID int64, s string) error {
 }
 
 func (h *Handler) Create(chatID int64) error {
-	if err := h.NewDoc(); err != nil || h.doc == nil {
-		return fmt.Errorf("failed to create new document: %s", err.Error())
-	}
-	fmt.Println(h.doc.ReplaceMap)
-
-	if err := h.doc.DocX.ReplaceAll(h.doc.ReplaceMap); err != nil {
-		return fmt.Errorf("failed to replace: %s", err.Error())
+	if err := h.CreateDocument(); err != nil {
+		return fmt.Errorf("failed to create replace document: %s", err.Error())
 	}
 
-	if err := h.doc.DocX.WriteToFile("replaced.docx"); err != nil {
-		return fmt.Errorf("failed to write file: %s", err.Error())
+	msg := tg.NewDocument(chatID, tg.FilePath("Рапорт."+h.data.Date+".docx"))
+	if _, err := h.Send(msg); err != nil {
+		return fmt.Errorf("failed to send 'create' msg: %s", err.Error())
 	}
 
 	return nil

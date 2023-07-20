@@ -7,6 +7,7 @@ type Data struct {
 	How        string
 	Date       string
 	Time       string
+	Count      int
 	Items      []string
 	CountItems []string
 }

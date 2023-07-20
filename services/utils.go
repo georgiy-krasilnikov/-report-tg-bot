@@ -2,6 +2,7 @@ package services
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	tg "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -16,7 +17,7 @@ func (h *Handler) Delete(chatID int64, msgID int) error {
 	return nil
 }
 
-func (h *Handler) Add(s string) {
+func (h *Handler) Add(s string) error {
 	switch true {
 	case h.data.Event == "":
 		h.data.Event = s
@@ -26,7 +27,18 @@ func (h *Handler) Add(s string) {
 		h.data.Date = s
 	case h.data.Time == "":
 		h.data.Time = s
+	case h.data.Count == 0:
+		c, err := strconv.Atoi(s)
+		if err != nil {
+			return fmt.Errorf("failed to add data: %s", err.Error())
+		}
+		h.data.Count = c
 	case h.data.Items == nil:
-		h.data.Items, h.data.CountItems = append(h.data.Items, strings.Split(s, ", ")[0]), append(h.data.Items, strings.Split(s, ", ")[1])
+		d := strings.Split(s, ", ")
+		for i := 0; i < len(d); i += 2 {
+			h.data.Items, h.data.CountItems = append(h.data.Items, d[i]), append(h.data.CountItems, d[i+1])
+		}
 	}
+
+	return nil
 }
