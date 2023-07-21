@@ -37,10 +37,6 @@ func (h *Handler) Run() error {
 			if err := h.Start(u.Message.Chat.ID); err != nil {
 				return fmt.Errorf("failed to call func 'next': %s", err.Error())
 			}
-		case u.Message != nil && u.Message.Text == "/create":
-			if err := h.Create(u.Message.Chat.ID); err != nil {
-				return fmt.Errorf("failed to send replaced file: %s", err.Error())
-			}
 		case u.Message == nil && u.CallbackQuery != nil:
 			if err := h.Next(u.CallbackQuery.Message.Chat.ID, u.CallbackData()); err != nil {
 				return fmt.Errorf("error in func 'next': %s", err.Error())
