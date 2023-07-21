@@ -22,7 +22,6 @@ func (h *Handler) Next(chatID int64, s string) error {
 	if err := h.Add(s); err != nil {
 		return fmt.Errorf("failed to add data: %s", err.Error())
 	}
-	fmt.Println(h.data)
 
 	var msg tg.MessageConfig
 

@@ -28,7 +28,7 @@ func New(botToken string) (*Handler, error) {
 func (h *Handler) Run() error {
 	upd := tg.NewUpdate(0)
 	upd.Timeout = 60
-	//h.Debug = true
+	h.Debug = true
 	upds := h.GetUpdatesChan(upd)
 
 	for u := range upds {
