@@ -2,13 +2,15 @@ package services
 
 import (
 	"fmt"
+	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	tg "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
-func (h *Handler) Delete(chatID int64, msgID int) error {
+func (h *Handler) DeleteMessage(chatID int64, msgID int) error {
 	_, err := h.Request(tg.NewDeleteMessage(chatID, msgID))
 	if err != nil {
 		return fmt.Errorf("failed to send request: %s", err.Error())
@@ -17,7 +19,7 @@ func (h *Handler) Delete(chatID int64, msgID int) error {
 	return nil
 }
 
-func (h *Handler) Add(s string) error {
+func (h *Handler) AddData(s string) error {
 	switch true {
 	case h.data.Event == "":
 		h.data.Event = s
@@ -41,4 +43,23 @@ func (h *Handler) Add(s string) error {
 	}
 
 	return nil
+}
+
+func (h *Handler) DeleteDocument() error {
+	if time.Now().Format("01.02.2006") == h.data.Date && strconv.Itoa(time.Now().Hour()) == "23" && strconv.Itoa(time.Now().Minute()) == "59" {
+		if err := os.Remove("docs/Рапорт." + h.data.Date + ".docx"); err != nil {
+			return fmt.Errorf("failed to delete document: %s", err.Error())
+		}
+	}
+
+	return nil
+}
+
+func CreateKeyboard(lst []string) tg.InlineKeyboardMarkup {
+	key := tg.NewInlineKeyboardRow()
+	for _, v := range lst {
+		key = append(key, tg.NewInlineKeyboardButtonData(v, v))
+	}
+
+	return tg.NewInlineKeyboardMarkup(key)
 }

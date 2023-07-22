@@ -3,6 +3,7 @@ package services
 import "github.com/lukasjarosch/go-docx"
 
 type Data struct {
+	IsNew      bool
 	Event      string
 	How        string
 	Date       string
@@ -13,6 +14,7 @@ type Data struct {
 }
 
 type Doc struct {
+	DocName    string
 	DocX       *docx.Document
 	ReplaceMap docx.PlaceholderMap
 }

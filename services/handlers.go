@@ -35,18 +35,18 @@ func (h *Handler) Run() error {
 		switch true {
 		case u.Message != nil && u.Message.Text == "/start":
 			if err := h.Start(u.Message.Chat.ID); err != nil {
-				return fmt.Errorf("failed to call func 'next': %s", err.Error())
+				return fmt.Errorf("error in 'start' func: %s", err.Error())
 			}
 		case u.Message == nil && u.CallbackQuery != nil:
 			if err := h.Next(u.CallbackQuery.Message.Chat.ID, u.CallbackData()); err != nil {
-				return fmt.Errorf("error in func 'next': %s", err.Error())
+				return fmt.Errorf("error in 'next' func: %s", err.Error())
 			}
-			if err := h.Delete(u.CallbackQuery.Message.Chat.ID, u.CallbackQuery.Message.MessageID); err != nil {
+			if err := h.DeleteMessage(u.CallbackQuery.Message.Chat.ID, u.CallbackQuery.Message.MessageID); err != nil {
 				return fmt.Errorf("failed to delete msg: %s", err.Error())
 			}
 
 		case u.Message != nil && u.Message.Text != "/start":
-			if err := h.Delete(u.Message.Chat.ID, u.Message.MessageID-1); err != nil {
+			if err := h.DeleteMessage(u.Message.Chat.ID, u.Message.MessageID-1); err != nil {
 				return fmt.Errorf("failed to delete msg: %s", err.Error())
 			}
 			if err := h.Next(u.Message.Chat.ID, u.Message.Text); err != nil {
