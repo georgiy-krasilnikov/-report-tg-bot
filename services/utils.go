@@ -47,7 +47,7 @@ func (h *Handler) AddData(s string) error {
 
 func (h *Handler) DeleteDocument() error {
 	if time.Now().Format("01.02.2006") == h.data.Date && strconv.Itoa(time.Now().Hour()) == "23" && strconv.Itoa(time.Now().Minute()) == "59" {
-		if err := os.Remove("docs/Рапорт." + h.data.Date + ".docx"); err != nil {
+		if err := os.Remove("docs/" + h.doc.DocName); err != nil {
 			return fmt.Errorf("failed to delete document: %s", err.Error())
 		}
 	}
@@ -55,11 +55,16 @@ func (h *Handler) DeleteDocument() error {
 	return nil
 }
 
-func CreateKeyboard(lst []string) tg.InlineKeyboardMarkup {
-	key := tg.NewInlineKeyboardRow()
-	for _, v := range lst {
-		key = append(key, tg.NewInlineKeyboardButtonData(v, v))
+func NewKeyboard() (tg.InlineKeyboardMarkup, error) {
+	lst, err := GetListOfDocuments()
+	if err != nil {
+		return tg.InlineKeyboardMarkup{}, fmt.Errorf("failed to get list of documents: %s", err.Error())
 	}
 
-	return tg.NewInlineKeyboardMarkup(key)
+	var btns []tg.InlineKeyboardButton
+	for _, v := range lst {
+		btns = append(btns, tg.NewInlineKeyboardButtonData(v, v))
+	}
+
+	return tg.NewInlineKeyboardMarkup(tg.NewInlineKeyboardRow(btns...)), nil
 }

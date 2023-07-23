@@ -17,6 +17,7 @@ func (h *Handler) NewDoc() error {
 	}
 
 	h.doc = &Doc{
+		DocName: "Рапорт." + h.data.Date + ".docx",
 		DocX: doc,
 		ReplaceMap: docx.PlaceholderMap{
 			"дд.мм.гггг": h.data.Date,
@@ -38,11 +39,11 @@ func (h *Handler) CreateDocument() error {
 		return fmt.Errorf("failed to replace: %s", err.Error())
 	}
 
-	if err := h.doc.DocX.WriteToFile("docs/Рапорт." + h.data.Date + ".docx"); err != nil {
+	if err := h.doc.DocX.WriteToFile("docs/" + h.doc.DocName); err != nil {
 		return fmt.Errorf("failed to write file: %s", err.Error())
 	}
 
-	doc, err := document.Open("docs/Рапорт." + h.data.Date + ".docx")
+	doc, err := document.Open("docs/" + h.doc.DocName)
 	if err != nil {
 		return fmt.Errorf("error opening document: %s", err.Error())
 	}
@@ -57,7 +58,7 @@ func (h *Handler) CreateDocument() error {
 		row.Cells()[2].Paragraphs()[0].AddRun().AddText(h.data.CountItems[i])
 	}
 
-	if err := doc.SaveToFile("docs/Рапорт." + h.data.Date + ".docx"); err != nil {
+	if err := doc.SaveToFile("docs/" + h.doc.DocName); err != nil {
 		return fmt.Errorf("failed to save replaced file: %s", err.Error())
 	}
 
@@ -70,7 +71,7 @@ func GetListOfDocuments() ([]string, error) {
 		return nil, fmt.Errorf("failed to get list of names of files: %s", err.Error())
 	}
 
-	lst := make([]string, len(m))
+	var lst []string
 	for _, v := range m {
 		lst = append(lst, strings.TrimPrefix(v, "docs/"))
 	}

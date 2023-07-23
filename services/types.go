@@ -3,7 +3,6 @@ package services
 import "github.com/lukasjarosch/go-docx"
 
 type Data struct {
-	IsNew      bool
 	Event      string
 	How        string
 	Date       string
