@@ -24,18 +24,15 @@ func (h *Handler) Start(chatID int64) error {
 }
 
 func (h *Handler) Next(chatID int64, s string) error {
-	switch true {
-	case s == "":
-		return fmt.Errorf("s can't be empty")
-	default:
-		if err := h.AddData(s); err != nil {
-			return fmt.Errorf("failed to add data: %s", err.Error())
-		}
+	if err := h.AddData(s); err != nil {
+		return fmt.Errorf("failed to add data: %s", err.Error())
 	}
 
 	var msg tg.MessageConfig
 
 	switch true {
+	case s == "":
+		return fmt.Errorf("s can't be empty")
 	case s == "/get":
 		msg = tg.NewMessage(chatID, "Теперь выбери рапорт, который ты хочешь получить:")
 		kbrd, err := NewKeyboard()
@@ -43,14 +40,16 @@ func (h *Handler) Next(chatID int64, s string) error {
 			return fmt.Errorf("failed to create keyboard: %s", err.Error())
 		}
 		msg.ReplyMarkup = kbrd
+
 	case strings.Contains(s, "docx"):
 		msg := tg.NewDocument(chatID, tg.FilePath("docs/"+s))
 		if _, err := h.Send(msg); err != nil {
 			return fmt.Errorf("failed to send msg with document: %s", err.Error())
 		}
-	case h.data.Event == "":
+
+	case s == "/create":
 		msg = tg.NewMessage(chatID, "Сначала введи мероприятие, для которого тебе нужен рапорт, начиная со слов после _В связи с_. *Пример:* _редакторским просмотром фестивался творчества \"Студенческая весна\"_.")
-		msg.ParseMode = "markdown"
+
 	case h.data.How == "":
 		msg = tg.NewMessage(chatID, "Теперь выбери, каким образом ты будешь выносить предметы:")
 		msg.ReplyMarkup = tg.NewInlineKeyboardMarkup(
@@ -59,26 +58,29 @@ func (h *Handler) Next(chatID int64, s string) error {
 				tg.NewInlineKeyboardButtonData("Через гараж", "гаражный въезд"),
 			),
 		)
+
 	case h.data.Date == "":
 		msg = tg.NewMessage(chatID, "Теперь введи дату выноса в следующем формате: _дд.мм.гггг_. *Пример:* _31.12.2022_.")
-		msg.ParseMode = "markdown"
+
 	case h.data.Time == "":
 		msg = tg.NewMessage(chatID, "Теперь введи время выноса. *Пример:* _9:00 до 12:00_.")
-		msg.ParseMode = "markdown"
+
 	case h.data.Count == 0:
 		msg = tg.NewMessage(chatID, "Теперь введи количество видов предметов. *Пример:* если у нас 1 ящик, 2 стула и 1 стол: _3_, если у нас 3 стула, то: _1_.")
-		msg.ParseMode = "markdown"
+
 	case h.data.Items == nil:
 		msg = tg.NewMessage(chatID, "Теперь введи предметы, которые ты собираешься выносить. Для рапорта нужны следующие параметры: наименование предмета и его количество. *Пример:* _Стул, 2_. Если у тебя *несколько предметов*, то пиши их так: _Стул, 2, Стол, 1_.")
-		msg.ParseMode = "markdown"
+
 	case h.data.Items != nil:
 		if err := h.SendDocument(chatID); err != nil {
 			return fmt.Errorf("failed to send document: %s", err.Error())
 		}
 		return nil
+
 	default:
 		msg = tg.NewMessage(chatID, "Я не могу обработать эти данные.")
 	}
+	msg.ParseMode = "markdown"
 
 	if _, err := h.Send(msg); err != nil {
 		return fmt.Errorf("failed to send 'next' msg: %s", err.Error())
