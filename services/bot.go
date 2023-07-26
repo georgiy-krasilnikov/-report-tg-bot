@@ -12,7 +12,7 @@ func (h *Handler) Start(chatID int64) error {
 	msg.ReplyMarkup = tg.NewInlineKeyboardMarkup(
 		tg.NewInlineKeyboardRow(
 			tg.NewInlineKeyboardButtonData("Создать новый рапорт", "/create"),
-			tg.NewInlineKeyboardButtonData("Получить список рапортов", "/get"),
+			tg.NewInlineKeyboardButtonData("Выбрать рапорт из списка", "/list"),
 		),
 	)
 
@@ -33,8 +33,8 @@ func (h *Handler) Next(chatID int64, s string) error {
 	switch true {
 	case s == "":
 		return fmt.Errorf("s can't be empty")
-	case s == "/get":
-		msg = tg.NewMessage(chatID, "Теперь выбери рапорт, который ты хочешь получить:")
+	case s == "/list":
+		msg = tg.NewMessage(chatID, "Теперь выбери рапорт:")
 		kbrd, err := NewKeyboard()
 		if err != nil {
 			return fmt.Errorf("failed to create keyboard: %s", err.Error())
@@ -42,10 +42,28 @@ func (h *Handler) Next(chatID int64, s string) error {
 		msg.ReplyMarkup = kbrd
 
 	case strings.Contains(s, "docx"):
-		msg := tg.NewDocument(chatID, tg.FilePath("docs/"+s))
+		msg = tg.NewMessage(chatID, "Теперь выбери что ты хочешь сделать с выбранным рапортом:")
+		msg.ReplyMarkup = tg.NewInlineKeyboardMarkup(
+			tg.NewInlineKeyboardRow(
+				tg.NewInlineKeyboardButtonData("Получить рапорт", "/get"),
+				tg.NewInlineKeyboardButtonData("Редактировать рапорт", "/edit"),
+			),
+		)
+
+	case s == "/get":
+		msg := tg.NewDocument(chatID, tg.FilePath("docs/"+h.doc.DocName))
 		if _, err := h.Send(msg); err != nil {
 			return fmt.Errorf("failed to send msg with document: %s", err.Error())
 		}
+
+	case s == "/edit":
+		msg = tg.NewMessage(chatID, "Теперь выбери, что ты хочешь редактировать:")
+		msg.ReplyMarkup = tg.NewInlineKeyboardMarkup(
+			tg.NewInlineKeyboardRow(
+				tg.NewInlineKeyboardButtonData("Дату", "/data"),
+				tg.NewInlineKeyboardButtonData("Список предметов", "/items"),
+			),
+		)
 
 	case s == "/create":
 		msg = tg.NewMessage(chatID, "Сначала введи мероприятие, для которого тебе нужен рапорт, начиная со слов после _В связи с_. *Пример:* _редакторским просмотром фестивался творчества \"Студенческая весна\"_.")

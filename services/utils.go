@@ -19,8 +19,10 @@ func (h *Handler) DeleteMessage(chatID int64, msgID int) error {
 
 func (h *Handler) AddData(s string) error {
 	switch true {
-	case s == "/create" || s == "/get" || strings.Contains(s, "docx") || s == "":
+	case s == "/create" || s == "/get" || s == "/list" || s == "/edit" || s == "":
 		return nil
+	case strings.Contains(s, "docx"):
+		h.doc.DocName = s
 	case h.data.Event == "":
 		h.data.Event = s
 
