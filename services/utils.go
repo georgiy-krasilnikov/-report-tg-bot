@@ -19,11 +19,11 @@ func (h *Handler) DeleteMessage(chatID int64, msgID int) error {
 
 func (h *Handler) AddData(s string) error {
 	switch true {
-	case s == "/create" || s == "/get" || s == "/list" || s == "/edit" || s == "":
+	case s == "/create" || s == "/get" || s == "/list" || s == "/edit" || s == "" || s == "/data":
 		return nil
 	case strings.Contains(s, "docx"):
 		h.doc.DocName = s
-	case h.data.Event == "":
+	case h.data.Event == "" && strings.Contains(s, "редакторским"):
 		h.data.Event = s
 
 	case h.data.How == "":

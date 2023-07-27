@@ -26,6 +26,10 @@ func New(botToken string) (*Handler, error) {
 }
 
 func (h *Handler) Run() error {
+	if err := h.DeleteDocument(); err != nil {
+		return fmt.Errorf("failed to delete document: %s", err.Error())
+	}
+
 	upd := tg.NewUpdate(0)
 	upd.Timeout = 60
 	h.Debug = true
