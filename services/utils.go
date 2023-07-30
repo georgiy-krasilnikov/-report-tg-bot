@@ -19,33 +19,34 @@ func (h *Handler) DeleteMessage(chatID int64, msgID int) error {
 
 func (h *Handler) AddData(s string) error {
 	switch true {
-	case s == "/create" || s == "/get" || s == "/list" || s == "/edit" || s == "" || s == "/data":
+	case strings.Contains(s, "/") || s == "":
 		return nil
 	case strings.Contains(s, "docx"):
 		h.doc.DocName = s
+		h.doc.DocPath = "docs/" + s
 	case h.data.Event == "" && strings.Contains(s, "редакторским"):
 		h.data.Event = s
 
-	case h.data.How == "":
+	case h.data.How == "" && h.data.Event != "":
 		h.data.How = s
 
-	case h.data.Date == "":
+	case (h.data.Date == "" && h.data.How != "") || strings.Contains(s, ".20"):
 		h.data.Date = s
 
-	case h.data.Time == "":
+	case h.data.Time == "" && h.data.Date != "" && strings.Contains(s, ":"):
 		h.data.Time = s
 
-	case h.data.Count == 0:
-		c, err := strconv.Atoi(s)
+	case h.data.Table.ItemsNumber == 0:
+		n, err := strconv.Atoi(s)
 		if err != nil {
 			return fmt.Errorf("failed to add data: %s", err.Error())
 		}
-		h.data.Count = c
+		h.data.Table.ItemsNumber = n
 
-	case h.data.Items == nil:
+	case h.data.Table.Items == nil && h.data.Table.ItemsNumber != 0:
 		d := strings.Split(s, ", ")
 		for i := 0; i < len(d); i += 2 {
-			h.data.Items, h.data.CountItems = append(h.data.Items, d[i]), append(h.data.CountItems, d[i+1])
+			h.data.Table.Items, h.data.Table.CountItems = append(h.data.Table.Items, d[i]), append(h.data.Table.CountItems, d[i+1])
 		}
 	}
 

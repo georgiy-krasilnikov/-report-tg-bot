@@ -20,6 +20,7 @@ func (h *Handler) NewDoc() error {
 
 	h.doc = &Doc{
 		DocName: "Рапорт." + h.data.Date + ".docx",
+		DocPath: "docs/" + h.doc.DocName,
 		DocX:    doc,
 		ReplaceMap: docx.PlaceholderMap{
 			"дд.мм.гггг": h.data.Date,
@@ -45,22 +46,22 @@ func (h *Handler) CreateDocument() error {
 		return fmt.Errorf("failed to write file: %s", err.Error())
 	}
 
-	doc, err := document.Open("docs/" + h.doc.DocName)
+	doc, err := document.Open(h.doc.DocPath)
 	if err != nil {
 		return fmt.Errorf("error opening document: %s", err.Error())
 	}
 
-	for i := 0; i < h.data.Count; i++ {
+	for i := 0; i < h.data.Table.ItemsNumber; i++ {
 		row := doc.Tables()[1].InsertRowAfter(doc.Tables()[1].Rows()[i])
 		for i := 0; i < 5; i++ {
 			row.AddCell().AddParagraph()
 		}
 		row.Cells()[0].Paragraphs()[0].AddRun().AddText(strconv.Itoa(i + 1))
-		row.Cells()[1].Paragraphs()[0].AddRun().AddText(h.data.Items[i])
-		row.Cells()[2].Paragraphs()[0].AddRun().AddText(h.data.CountItems[i])
+		row.Cells()[1].Paragraphs()[0].AddRun().AddText(h.data.Table.Items[i])
+		row.Cells()[2].Paragraphs()[0].AddRun().AddText(h.data.Table.CountItems[i])
 	}
 
-	if err := doc.SaveToFile("docs/" + h.doc.DocName); err != nil {
+	if err := doc.SaveToFile(h.doc.DocPath); err != nil {
 		return fmt.Errorf("failed to save replaced file: %s", err.Error())
 	}
 
@@ -96,4 +97,42 @@ func (h *Handler) DeleteDocument() error {
 	}
 
 	return nil
+}
+
+func (h *Handler) EditDate() error {
+	doc, err := document.Open("docs/" + h.doc.DocName)
+	if err != nil {
+		return fmt.Errorf("error opening document: %s", err.Error())
+	}
+
+	doc.Paragraphs()[4].AddRun().AddText(h.data.Date)
+	doc.Paragraphs()[4].SetStyle("Text Body")
+	doc.Paragraphs()[4].RemoveRun(doc.Paragraphs()[4].Runs()[0])
+
+	h.doc.DocPath = "docs/Рапорт." + h.data.Date + ".docx"
+	if err := doc.SaveToFile(h.doc.DocPath); err != nil {
+		return fmt.Errorf("failed to save edit date file: %s", err.Error())
+	}
+
+	return nil
+}
+
+func (h *Handler) GetTableFromDocument() ([]string, error) {
+	doc, err := document.Open("docs/" + h.doc.DocName)
+	if err != nil {
+		return nil, fmt.Errorf("error opening document: %s", err.Error())
+	}
+
+	var lst []string
+	for i := 1; i < len(doc.Tables()[1].Rows())-3; i++ {
+		row := ""
+		for j := 0; j < len(doc.Tables()[1].Rows()[i].Cells()); j++ {
+			row += doc.Tables()[1].Rows()[i].Cells()[j].Paragraphs()[0].Runs()[0].Text()
+		}
+		lst = append(lst, row)
+		fmt.Println(lst[i-1])
+
+	}
+
+	return lst, nil
 }

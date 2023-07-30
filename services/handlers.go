@@ -32,7 +32,7 @@ func (h *Handler) Run() error {
 
 	upd := tg.NewUpdate(0)
 	upd.Timeout = 60
-	h.Debug = true
+	//h.Debug = true
 	upds := h.GetUpdatesChan(upd)
 
 	for u := range upds {
@@ -55,6 +55,7 @@ func (h *Handler) Run() error {
 			if err := h.Next(u.Message.Chat.ID, u.Message.Text); err != nil {
 				return fmt.Errorf("error in 'next' func: %s", err.Error())
 			}
+
 			if err := h.DeleteMessage(u.Message.Chat.ID, u.Message.MessageID-1); err != nil {
 				return fmt.Errorf("failed to delete msg: %s", err.Error())
 			}

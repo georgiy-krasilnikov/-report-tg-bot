@@ -52,7 +52,7 @@ func (h *Handler) Next(chatID int64, s string) error {
 
 	case s == "/get":
 		msg := tg.NewDocument(chatID, tg.FilePath("docs/"+h.doc.DocName))
-		msg.Caption = "Вот твой рапорт 👇"
+		msg.Caption = "Вот твой рапорт 👆"
 		if _, err := h.Send(msg); err != nil {
 			return fmt.Errorf("failed to send msg with document: %s", err.Error())
 		}
@@ -79,10 +79,18 @@ func (h *Handler) Next(chatID int64, s string) error {
 		msg = tg.NewMessage(chatID, "Теперь выбери, что ты хочешь сделать со списком предметов:")
 		msg.ReplyMarkup = tg.NewInlineKeyboardMarkup(
 			tg.NewInlineKeyboardRow(
-				tg.NewInlineKeyboardButtonData("Удалить все предметы", "/delete"),
-				tg.NewInlineKeyboardButtonData("Добавить предметы", "/add"),
+				tg.NewInlineKeyboardButtonData("Удалить предмет(-ы)", "/delete"),
+				tg.NewInlineKeyboardButtonData("Заменить предмет(-ы)", "/replace"),
+				tg.NewInlineKeyboardButtonData("Добавить предметы(-ы)", "/add"),
 			),
 		)
+
+	case s == "/delete" || s == "/replace":
+		h.GetTableFromDocument()
+
+	case strings.Contains(s, ".20") && h.data.How == "":
+		h.EditDate()
+
 	case s == "/add":
 
 	case s == "/delete":
@@ -90,16 +98,16 @@ func (h *Handler) Next(chatID int64, s string) error {
 	case (h.data.Date == "" && h.data.How != "") || s == "/data":
 		msg = tg.NewMessage(chatID, "Теперь введи дату выноса в следующем формате: _дд.мм.гггг_. *Пример:* _31.12.2022_.")
 
-	case h.data.Time == "" && h.data.Date != "":
+	case h.data.Time == "" && h.data.Date != "" && h.data.Event != "":
 		msg = tg.NewMessage(chatID, "Теперь введи время выноса. *Пример:* _9:00 до 12:00_.")
 
-	case (h.data.Count == 0 && h.data.Time != "") || s == "/add":
+	case (h.data.Table.ItemsNumber == 0 && h.data.Time != "") || s == "/add":
 		msg = tg.NewMessage(chatID, "Теперь введи количество видов предметов. *Пример:* если у нас 1 ящик, 2 стула и 1 стол: _3_, если у нас 3 стула, то: _1_.")
 
-	case h.data.Items == nil && h.data.Count != 0:
+	case h.data.Table.Items == nil && h.data.Table.ItemsNumber != 0:
 		msg = tg.NewMessage(chatID, "Теперь введи предметы, которые ты собираешься выносить. Для рапорта нужны следующие параметры: наименование предмета и его количество. *Пример:* _Стул, 2_. Если у тебя *несколько предметов*, то пиши их так: _Стул, 2, Стол, 1_.")
 
-	case h.data.Items != nil:
+	case h.data.Table.Items != nil:
 		if err := h.SendDocument(chatID); err != nil {
 			return fmt.Errorf("failed to send document: %s", err.Error())
 		}
@@ -123,7 +131,7 @@ func (h *Handler) SendDocument(chatID int64) error {
 	}
 
 	msg := tg.NewDocument(chatID, tg.FilePath("docs/"+h.doc.DocName))
-	msg.Caption = "Вот твой рапорт 👇"
+	msg.Caption = "Вот твой рапорт 👆"
 	if _, err := h.Send(msg); err != nil {
 		return fmt.Errorf("failed to send msg with document: %s", err.Error())
 	}
@@ -146,4 +154,8 @@ func (h *Handler) SendEditMessage(chatID int64) error {
 	}
 
 	return nil
+}
+
+func (h *Handler) SendEditDocument(chatID int64) {
+
 }
