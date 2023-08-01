@@ -17,6 +17,12 @@ func (h *Handler) DeleteMessage(chatID int64, msgID int) error {
 	return nil
 }
 
+func (h *Handler) NewItems(s []string) {
+	for i := 0; i < h.data.Table.ItemsNumber; i++ {
+		h.data.Table.Items = append(h.data.Table.Items, Item{strings.Split(s[i], ", ")[0], strings.Split(s[i], ", ")[1]})
+	}
+}
+
 func (h *Handler) AddData(s string) error {
 	switch true {
 	case strings.Contains(s, "/") || s == "":
@@ -36,17 +42,27 @@ func (h *Handler) AddData(s string) error {
 	case h.data.Time == "" && h.data.Date != "" && strings.Contains(s, ":"):
 		h.data.Time = s
 
-	case h.data.Table.ItemsNumber == 0:
+	case h.data.Table.ItemsNumber == 0 && isNumber(s):
 		n, err := strconv.Atoi(s)
 		if err != nil {
-			return fmt.Errorf("failed to add data: %s", err.Error())
+			return fmt.Errorf("failed to add ItemsNumber: %s", err.Error())
 		}
 		h.data.Table.ItemsNumber = n
 
 	case h.data.Table.Items == nil && h.data.Table.ItemsNumber != 0:
+		h.NewItems(strings.Split(s, " | "))
+
+	case h.data.Table.Items != nil && isNumber(s):
+		n, err := strconv.Atoi(s)
+		if err != nil {
+			return fmt.Errorf("failed to add CarsNumber: %s", err.Error())
+		}
+		h.data.Table.CarsNumber = n
+
+	case h.data.Table.Cars == nil && h.data.Table.CarsNumber != 0:
 		d := strings.Split(s, ", ")
 		for i := 0; i < len(d); i += 2 {
-			h.data.Table.Items, h.data.Table.CountItems = append(h.data.Table.Items, d[i]), append(h.data.Table.CountItems, d[i+1])
+			h.data.Table.Cars, h.data.Table.CountCars = append(h.data.Table.Cars, d[i]), append(h.data.Table.CountCars, d[i+1])
 		}
 	}
 
@@ -65,4 +81,14 @@ func NewKeyboard() (tg.InlineKeyboardMarkup, error) {
 	}
 
 	return tg.NewInlineKeyboardMarkup(tg.NewInlineKeyboardRow(btns...)), nil
+}
+
+func isNumber(s string) bool {
+	for _, v := range s {
+		if v < '0' || v > '9' {
+			return false
+		}
+	}
+
+	return true
 }

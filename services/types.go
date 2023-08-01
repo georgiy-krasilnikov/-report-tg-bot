@@ -8,15 +8,27 @@ type Data struct {
 	Date  string
 	Time  string
 	Table Table
+	Full  bool
 }
 
 type Table struct {
 	ItemsNumber int
-	Items       []string
-	CountItems  []string
+	Items       []Item
 	CarsNumber  int
-	Cars        []string
-	CountCars   []string
+	Cars        []Car
+}
+
+type Item struct {
+	Name  string
+	Count string
+}
+
+type Car struct {
+	Brand     string
+	Number    string
+	FullName  string
+	Telephone string
+	Count     string
 }
 
 type Doc struct {
