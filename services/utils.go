@@ -23,6 +23,12 @@ func (h *Handler) NewItems(s []string) {
 	}
 }
 
+func (h *Handler) NewCars(s []string) {
+	for i := 0; i < h.data.Table.CarsNumber; i++ {
+		h.data.Table.Cars = append(h.data.Table.Cars, Car{strings.Split(s[i], ", ")[0], strings.Split(s[i], ", ")[1], strings.Split(s[i], ", ")[2], strings.Split(s[i], ", ")[3]})
+	}
+}
+
 func (h *Handler) AddData(s string) error {
 	switch true {
 	case strings.Contains(s, "/") || s == "":
@@ -30,7 +36,7 @@ func (h *Handler) AddData(s string) error {
 	case strings.Contains(s, "docx"):
 		h.doc.DocName = s
 		h.doc.DocPath = "docs/" + s
-	case h.data.Event == "" && strings.Contains(s, "редакторским"):
+	case h.data.Event == "":
 		h.data.Event = s
 
 	case h.data.How == "" && h.data.Event != "":
@@ -60,16 +66,13 @@ func (h *Handler) AddData(s string) error {
 		h.data.Table.CarsNumber = n
 
 	case h.data.Table.Cars == nil && h.data.Table.CarsNumber != 0:
-		d := strings.Split(s, ", ")
-		for i := 0; i < len(d); i += 2 {
-			h.data.Table.Cars, h.data.Table.CountCars = append(h.data.Table.Cars, d[i]), append(h.data.Table.CountCars, d[i+1])
-		}
+		h.NewCars(strings.Split(s, " | "))
 	}
 
 	return nil
 }
 
-func NewKeyboard() (tg.InlineKeyboardMarkup, error) {
+func newKeyboard() (tg.InlineKeyboardMarkup, error) {
 	lst, err := GetListOfDocuments()
 	if err != nil {
 		return tg.InlineKeyboardMarkup{}, fmt.Errorf("failed to get list of documents: %s", err.Error())
@@ -84,6 +87,10 @@ func NewKeyboard() (tg.InlineKeyboardMarkup, error) {
 }
 
 func isNumber(s string) bool {
+	if strings.HasPrefix(s, "0") {
+		return false
+	}
+
 	for _, v := range s {
 		if v < '0' || v > '9' {
 			return false

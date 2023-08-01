@@ -20,7 +20,7 @@ func (h *Handler) NewDoc() error {
 
 	h.doc = &Doc{
 		DocName: "Рапорт." + h.data.Date + ".docx",
-		DocPath: "docs/" + h.doc.DocName,
+		DocPath: "docs/Рапорт." + h.data.Date + ".docx",
 		DocX:    doc,
 		ReplaceMap: docx.PlaceholderMap{
 			"дд.мм.гггг": h.data.Date,
@@ -41,14 +41,14 @@ func (h *Handler) CreateDocument() error {
 	if err := h.doc.DocX.ReplaceAll(h.doc.ReplaceMap); err != nil {
 		return fmt.Errorf("failed to replace: %s", err.Error())
 	}
-
-	if err := h.doc.DocX.WriteToFile("docs/" + h.doc.DocName); err != nil {
+	
+	if err := h.doc.DocX.WriteToFile(h.doc.DocPath); err != nil {
 		return fmt.Errorf("failed to write file: %s", err.Error())
 	}
 
 	doc, err := document.Open(h.doc.DocPath)
 	if err != nil {
-		return fmt.Errorf("error opening document: %s", err.Error())
+		return fmt.Errorf("error opening document in 'CreateDocuemnt': %s", err.Error())
 	}
 
 	for i := 0; i < h.data.Table.ItemsNumber; i++ {
@@ -56,9 +56,20 @@ func (h *Handler) CreateDocument() error {
 		for i := 0; i < 5; i++ {
 			row.AddCell().AddParagraph()
 		}
+
 		row.Cells()[0].Paragraphs()[0].AddRun().AddText(strconv.Itoa(i + 1))
-		row.Cells()[1].Paragraphs()[0].AddRun().AddText(h.data.Table.Items[i])
-		row.Cells()[2].Paragraphs()[0].AddRun().AddText(h.data.Table.CountItems[i])
+		row.Cells()[1].Paragraphs()[0].AddRun().AddText(h.data.Table.Items[i].Name)
+		row.Cells()[2].Paragraphs()[0].AddRun().AddText(h.data.Table.Items[i].Count)
+	}
+
+	for i := h.data.Table.ItemsNumber; i-h.data.Table.ItemsNumber < h.data.Table.CarsNumber; i++ {
+		row := doc.Tables()[1].InsertRowAfter(doc.Tables()[1].Rows()[i+2])
+
+		row.AddCell().AddParagraph().AddRun().AddText(strconv.Itoa(i - h.data.Table.ItemsNumber + 1))
+		row.AddCell().AddParagraph().AddRun().AddText(h.data.Table.Cars[i-h.data.Table.ItemsNumber].Brand)
+		row.AddCell().AddParagraph().AddRun().AddText(h.data.Table.Cars[i-h.data.Table.ItemsNumber].Number)
+		row.AddCell().AddParagraph().AddRun().AddText(h.data.Table.Cars[i-h.data.Table.ItemsNumber].FullName)
+		row.AddCell().AddParagraph().AddRun().AddText(h.data.Table.Cars[i-h.data.Table.ItemsNumber].Telephone)
 	}
 
 	if err := doc.SaveToFile(h.doc.DocPath); err != nil {
@@ -102,7 +113,7 @@ func (h *Handler) DeleteDocument() error {
 func (h *Handler) EditDate() error {
 	doc, err := document.Open("docs/" + h.doc.DocName)
 	if err != nil {
-		return fmt.Errorf("error opening document: %s", err.Error())
+		return fmt.Errorf("error opening document in 'EditDate': %s", err.Error())
 	}
 
 	doc.Paragraphs()[4].AddRun().AddText(h.data.Date)
@@ -120,7 +131,7 @@ func (h *Handler) EditDate() error {
 func (h *Handler) GetTableFromDocument() ([]string, error) {
 	doc, err := document.Open("docs/" + h.doc.DocName)
 	if err != nil {
-		return nil, fmt.Errorf("error opening document: %s", err.Error())
+		return nil, fmt.Errorf("error opening document in 'GetTableFromDocument': %s", err.Error())
 	}
 
 	var lst []string

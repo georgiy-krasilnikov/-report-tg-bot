@@ -28,7 +28,6 @@ type Car struct {
 	Number    string
 	FullName  string
 	Telephone string
-	Count     string
 }
 
 type Doc struct {

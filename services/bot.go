@@ -35,7 +35,7 @@ func (h *Handler) Next(chatID int64, s string) error {
 		return fmt.Errorf("s can't be empty")
 	case s == "/list":
 		msg = tg.NewMessage(chatID, "Теперь выбери рапорт:")
-		kbrd, err := NewKeyboard()
+		kbrd, err := newKeyboard()
 		if err != nil {
 			return fmt.Errorf("failed to create keyboard: %s", err.Error())
 		}
@@ -105,14 +105,13 @@ func (h *Handler) Next(chatID int64, s string) error {
 		msg = tg.NewMessage(chatID, "Теперь введи количество видов предметов. *Пример:* если у нас 1 ящик, 2 стула и 1 стол: _3_, если у нас 3 стула, то: _1_.")
 
 	case h.data.Table.Items == nil && h.data.Table.ItemsNumber != 0:
-		msg = tg.NewMessage(chatID, "Теперь введи предметы, которые ты собираешься выносить. Для рапорта нужны следующие параметры: наименование предмета и его количество. *Пример:* _Стул, 2_. Если у тебя *несколько предметов*, то пиши их так: _Стул, 2, Стол, 1_.")
+		msg = tg.NewMessage(chatID, "Теперь введи предметы, которые ты собираешься выносить. Для рапорта нужны следующие параметры: наименование предмета и его количество. *Пример:* _Стул, 2_. Если у тебя *несколько предметов*, то пиши их так: _Стул, 2 | Стол, 1_.")
 
 	case h.data.Table.Items != nil && h.data.Table.CarsNumber == 0:
 		msg = tg.NewMessage(chatID, "Если ты хочешь добавить в таблицу автомобили, то введи их количество. *Пример:* 2.\n\nИначе, отправь */empty*")
 
-
-	case h.data.Table.Cars == nil && s != "/empty" && h.data.Table.CarsNumber == 0:
-		msg = tg.NewMessage(chatID, "Теперь введи данные автомобилей, которые ты собираешься добавить. Для рапорта нужны следующие параметры: марка автомобиля, его госномер, твоё ФИО, и твой номер телефона. *Пример:* _Volkswagen Polo, А000ВС77, Иванов Иван Иванович, +7800553535_. Если у тебя *несколько автомобилей*, то пиши их так: _Volkswagen Polo, А000ВС77, Иванов Иван Иванович, +78005553535 | _Kia Rio, А111ВС77, Александров Александр Александрович, +78005554545_.")
+	case h.data.Table.Cars == nil && h.data.Table.CarsNumber != 0:
+		msg = tg.NewMessage(chatID, "Теперь введи данные автомобилей, которые ты собираешься добавить. Для рапорта нужны следующие параметры: марка автомобиля, его госномер, твоё ФИО, и твой номер телефона. *Пример:* _Volkswagen Polo, А000ВС77, Иванов Иван Иванович, +7800553535_. Если у тебя *несколько автомобилей*, то пиши их так: _Volkswagen Polo, А000ВС77, Иванов Иван Иванович, +78005553535 | Kia Rio, А111ВС77, Александров Александр Александрович, +78005554545_.")
 
 	case s == "/empty" || h.data.Table.Cars != nil:
 		if err := h.SendDocument(chatID); err != nil {
