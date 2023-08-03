@@ -41,14 +41,14 @@ func (h *Handler) CreateDocument() error {
 	if err := h.doc.DocX.ReplaceAll(h.doc.ReplaceMap); err != nil {
 		return fmt.Errorf("failed to replace: %s", err.Error())
 	}
-	
+
 	if err := h.doc.DocX.WriteToFile(h.doc.DocPath); err != nil {
 		return fmt.Errorf("failed to write file: %s", err.Error())
 	}
 
 	doc, err := document.Open(h.doc.DocPath)
 	if err != nil {
-		return fmt.Errorf("error opening document in 'CreateDocuemnt': %s", err.Error())
+		return fmt.Errorf("error opening document in 'CreateDocument': %s", err.Error())
 	}
 
 	for i := 0; i < h.data.Table.ItemsNumber; i++ {
@@ -111,7 +111,7 @@ func (h *Handler) DeleteDocument() error {
 }
 
 func (h *Handler) EditDate() error {
-	doc, err := document.Open("docs/" + h.doc.DocName)
+	doc, err := document.Open(h.doc.DocPath)
 	if err != nil {
 		return fmt.Errorf("error opening document in 'EditDate': %s", err.Error())
 	}
@@ -120,29 +120,26 @@ func (h *Handler) EditDate() error {
 	doc.Paragraphs()[4].SetStyle("Text Body")
 	doc.Paragraphs()[4].RemoveRun(doc.Paragraphs()[4].Runs()[0])
 
-	h.doc.DocPath = "docs/Рапорт." + h.data.Date + ".docx"
-	if err := doc.SaveToFile(h.doc.DocPath); err != nil {
+	if err := doc.SaveToFile("docs/Рапорт." + h.data.Date + ".docx"); err != nil {
 		return fmt.Errorf("failed to save edit date file: %s", err.Error())
 	}
 
 	return nil
 }
 
-func (h *Handler) GetTableFromDocument() ([]string, error) {
-	doc, err := document.Open("docs/" + h.doc.DocName)
+func (h *Handler) GetListOfItems() ([][]string, error) {
+	doc, err := document.Open(h.doc.DocPath)
 	if err != nil {
-		return nil, fmt.Errorf("error opening document in 'GetTableFromDocument': %s", err.Error())
+		return nil, fmt.Errorf("error opening document: %s", err.Error())
 	}
 
-	var lst []string
-	for i := 1; i < len(doc.Tables()[1].Rows())-3; i++ {
-		row := ""
-		for j := 0; j < len(doc.Tables()[1].Rows()[i].Cells()); j++ {
-			row += doc.Tables()[1].Rows()[i].Cells()[j].Paragraphs()[0].Runs()[0].Text()
+	var lst [][]string
+	for i := 1; strconv.Itoa(i) == doc.Tables()[1].Rows()[i].Cells()[0].Paragraphs()[0].Runs()[0].Text(); i++ {
+		var row []string
+		for j := 0; j < 3; j++ {
+			row = append(row, doc.Tables()[1].Rows()[i].Cells()[j].Paragraphs()[0].Runs()[0].Text())
 		}
 		lst = append(lst, row)
-		fmt.Println(lst[i-1])
-
 	}
 
 	return lst, nil
