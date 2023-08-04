@@ -33,11 +33,11 @@ func (h *Handler) AddData(s string) error {
 	switch true {
 	case strings.Contains(s, "/") || s == "":
 		return nil
-		
+
 	case strings.Contains(s, "docx"):
 		h.doc.DocName = s
 		h.doc.DocPath = "docs/" + s
-		
+
 	case h.data.Event == "" && !isNumber(s):
 		h.data.Event = s
 
@@ -66,22 +66,37 @@ func (h *Handler) AddData(s string) error {
 		if err != nil {
 			return fmt.Errorf("failed to add CarsNumber: %s", err.Error())
 		}
+
 		h.data.Table.CarsNumber = n
 
 	case h.data.Table.Cars == nil && h.data.Table.CarsNumber != 0:
 		h.NewCars(strings.Split(s, " | "))
+
+	case strings.Contains(s, "id: "):
 	}
 
 	return nil
 }
 
 func newKeyboard(lst []string, data []string) tg.InlineKeyboardMarkup {
-	var btns []tg.InlineKeyboardButton
-	for _, v := range lst {
-		btns = append(btns, tg.NewInlineKeyboardButtonData(v, v))
+	var kbrd [][]tg.InlineKeyboardButton
+	size := 2
+
+	for i := 0; i < len(lst); i += 2 {
+		if len(lst)-i == 1 {
+			size = 1
+		}
+
+		var btns []tg.InlineKeyboardButton
+
+		for j := i; len(btns) < size; j++ {
+			btns = append(btns, tg.NewInlineKeyboardButtonData(lst[j], data[j]))
+		}
+
+		kbrd = append(kbrd, btns)
 	}
 
-	return tg.NewInlineKeyboardMarkup(tg.NewInlineKeyboardRow(btns...))
+	return tg.InlineKeyboardMarkup{InlineKeyboard: kbrd}
 }
 
 func isNumber(s string) bool {
