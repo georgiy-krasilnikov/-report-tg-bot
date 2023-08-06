@@ -8,7 +8,6 @@ type Data struct {
 	Date  string
 	Time  string
 	Table Table
-	Full  bool
 }
 
 type Table struct {

@@ -172,11 +172,17 @@ func (h *Handler) ListBranch(chatID int64, s string) error {
 
 		return nil
 
-	case strings.HasPrefix(s, "id: "):
+	case s == "/add":
 		msg = tg.NewMessage(chatID, "Теперь введи количество видов предметов, которые ты хочешь добавить. *Пример:* если у нас 1 ящик, 2 стула и 1 стол: _3_, если у нас 3 стула, то: _1_.")
 
-	case s == "/add":
-		msg = tg.NewMessage(chatID, "Теперь введи количество видов предметов. *Пример:* если у нас 1 ящик, 2 стула и 1 стол: _3_, если у нас 3 стула, то: _1_.")
+	case h.data.Table.Items == nil && h.data.Table.ItemsNumber != 0 && isNumber(s):
+		msg = tg.NewMessage(chatID, "Теперь введи предметы, которые ты собираешься добавить. Для рапорта нужны следующие параметры: наименование предмета и его количество. *Пример:* _Стул, 2_. Если у тебя *несколько предметов*, то пиши их так: _Стул, 2 | Стол, 1_.")
+
+	case h.data.Table.Items != nil && h.data.Table.ItemsNumber != 0:
+		
+
+	case strings.HasPrefix(s, "id: "):
+		msg = tg.NewMessage(chatID, "Теперь введи данные о новом предмете. Для рапорта нужны следующие параметры: наименование предмета и его количество. *Пример:* _Стул, 2_.")
 
 	default:
 		msg = tg.NewMessage(chatID, "Я не могу обработать эти данные.")

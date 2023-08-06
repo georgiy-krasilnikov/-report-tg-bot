@@ -31,6 +31,7 @@ func (h *Handler) NewCars(s []string) {
 
 func (h *Handler) AddData(s string) error {
 	//var id string
+	fmt.Println(h.data)
 	
 	switch true {
 	case strings.HasPrefix(s, "/") || s == "":

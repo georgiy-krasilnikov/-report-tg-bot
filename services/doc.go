@@ -149,7 +149,7 @@ func (h *Handler) GetListOfItems() ([][]string, error) {
 	return lst, nil
 }
 
-func (h *Handler) DelteRowInDocument(id string) error {
+func (h *Handler) EditRow(id string) error {
 	doc, err := document.Open(h.doc.DocPath)
 	if err != nil {
 		return fmt.Errorf("failed to open document: %s", err.Error())
