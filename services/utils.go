@@ -30,11 +30,13 @@ func (h *Handler) NewCars(s []string) {
 }
 
 func (h *Handler) AddData(s string) error {
+	//var id string
+	
 	switch true {
-	case strings.Contains(s, "/") || s == "":
+	case strings.HasPrefix(s, "/") || s == "":
 		return nil
 
-	case strings.Contains(s, "docx"):
+	case strings.HasSuffix(s, ".docx"):
 		h.doc.DocName = s
 		h.doc.DocPath = "docs/" + s
 
@@ -71,8 +73,6 @@ func (h *Handler) AddData(s string) error {
 
 	case h.data.Table.Cars == nil && h.data.Table.CarsNumber != 0:
 		h.NewCars(strings.Split(s, " | "))
-
-	case strings.Contains(s, "id: "):
 	}
 
 	return nil

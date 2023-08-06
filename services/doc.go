@@ -2,7 +2,6 @@ package services
 
 import (
 	"fmt"
-	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -39,16 +38,16 @@ func (h *Handler) CreateDocument() error {
 	}
 
 	if err := h.doc.DocX.ReplaceAll(h.doc.ReplaceMap); err != nil {
-		return fmt.Errorf("failed to replace: %s", err.Error())
+		return fmt.Errorf("failed to replace letters: %s", err.Error())
 	}
 
 	if err := h.doc.DocX.WriteToFile(h.doc.DocPath); err != nil {
-		return fmt.Errorf("failed to write file: %s", err.Error())
+		return fmt.Errorf("failed to write to file: %s", err.Error())
 	}
 
 	doc, err := document.Open(h.doc.DocPath)
 	if err != nil {
-		return fmt.Errorf("error opening document in 'CreateDocument': %s", err.Error())
+		return fmt.Errorf("failed to open document: %s", err.Error())
 	}
 
 	for i := 0; i < h.data.Table.ItemsNumber; i++ {
@@ -73,7 +72,7 @@ func (h *Handler) CreateDocument() error {
 	}
 
 	if err := doc.SaveToFile(h.doc.DocPath); err != nil {
-		return fmt.Errorf("failed to save replaced file: %s", err.Error())
+		return fmt.Errorf("failed to save new file: %s", err.Error())
 	}
 
 	return nil
@@ -82,7 +81,7 @@ func (h *Handler) CreateDocument() error {
 func GetListOfDocuments() ([]string, error) {
 	m, err := filepath.Glob("docs/*.docx")
 	if err != nil {
-		return nil, fmt.Errorf("failed to get list of names of files: %s", err.Error())
+		return nil, fmt.Errorf("failed to get list of files: %s", err.Error())
 	}
 
 	var lst []string
@@ -93,27 +92,32 @@ func GetListOfDocuments() ([]string, error) {
 	return lst, nil
 }
 
-func (h *Handler) DeleteDocument() error {
-	lst, err := GetListOfDocuments()
-	if err != nil {
-		return fmt.Errorf("failed to get list of docs: %s", err.Error())
-	}
+// func (h *Handler) DeleteDocument() error {
+// 	lst, err := GetListOfDocuments()
+// 	if err != nil {
+// 		return fmt.Errorf("failed to get list of docs: %s", err.Error())
+// 	}
 
-	for _, name := range lst {
-		if time.Now().Format("01.02.2006") == strings.TrimPrefix(name, "Рапорт.") && strconv.Itoa(time.Now().Hour()) == "23" && strconv.Itoa(time.Now().Minute()) == "59" {
-			if err := os.Remove("docs/" + h.doc.DocName); err != nil {
-				return fmt.Errorf("failed to delete document: %s", err.Error())
-			}
-		}
-	}
+// 	for _, name := range lst {
+// 		if time.Now().Format("01.02.2006") == strings.TrimPrefix(name, "Рапорт.") && strconv.Itoa(time.Now().Hour()) == "23" && strconv.Itoa(time.Now().Minute()) == "59" {
+// 			if err := os.Remove("docs/" + h.doc.DocName); err != nil {
+// 				return fmt.Errorf("failed to delete document: %s", err.Error())
+// 			}
+// 		}
+// 	}
 
-	return nil
-}
+// 	return nil
+// }
 
 func (h *Handler) EditDate() error {
+	_, err := time.Parse(h.data.Date, "02.01.2006")
+	if err != nil {
+		return fmt.Errorf("invalid date format: %s", err.Error())
+	}
+
 	doc, err := document.Open(h.doc.DocPath)
 	if err != nil {
-		return fmt.Errorf("error opening document in 'EditDate': %s", err.Error())
+		return fmt.Errorf("failed to open document: %s", err.Error())
 	}
 
 	doc.Paragraphs()[4].AddRun().AddText(h.data.Date)
@@ -121,7 +125,7 @@ func (h *Handler) EditDate() error {
 	doc.Paragraphs()[4].RemoveRun(doc.Paragraphs()[4].Runs()[0])
 
 	if err := doc.SaveToFile("docs/Рапорт." + h.data.Date + ".docx"); err != nil {
-		return fmt.Errorf("failed to save edit date file: %s", err.Error())
+		return fmt.Errorf("failed to save edit file: %s", err.Error())
 	}
 
 	return nil
@@ -130,7 +134,7 @@ func (h *Handler) EditDate() error {
 func (h *Handler) GetListOfItems() ([][]string, error) {
 	doc, err := document.Open(h.doc.DocPath)
 	if err != nil {
-		return nil, fmt.Errorf("error opening document: %s", err.Error())
+		return nil, fmt.Errorf("failed to open document: %s", err.Error())
 	}
 
 	var lst [][]string
@@ -143,4 +147,25 @@ func (h *Handler) GetListOfItems() ([][]string, error) {
 	}
 
 	return lst, nil
+}
+
+func (h *Handler) DelteRowInDocument(id string) error {
+	doc, err := document.Open(h.doc.DocPath)
+	if err != nil {
+		return fmt.Errorf("failed to open document: %s", err.Error())
+	}
+
+	for i := 1; strconv.Itoa(i) == doc.Tables()[1].Rows()[i].Cells()[0].Paragraphs()[0].Runs()[0].Text(); i++ {
+		if strconv.Itoa(i) == id {
+			doc.Tables()[1].Rows()[i].Cells()[1].Paragraphs()[0].Runs()[0].ClearContent()
+			doc.Tables()[1].Rows()[i].Cells()[2].Paragraphs()[0].Runs()[0].ClearContent()
+
+		}
+	}
+
+	if err := doc.SaveToFile(h.doc.DocPath); err != nil {
+		return fmt.Errorf("failed to save edit file: %s", err.Error())
+	}
+
+	return nil
 }
