@@ -7,6 +7,7 @@ import (
 )
 
 type Handler struct {
+	mood string
 	*tg.BotAPI
 	data *Data
 	doc  *Doc
@@ -19,6 +20,7 @@ func New(botToken string) (*Handler, error) {
 	}
 
 	return &Handler{
+		"",
 		bot,
 		&Data{},
 		&Doc{},
@@ -44,6 +46,12 @@ func (h *Handler) Run() error {
 			}
 
 		case u.Message == nil && u.CallbackQuery != nil:
+			if u.CallbackData() == "/create" {
+				h.mood = "/create"
+			} else if u.CallbackData() == "/list" {
+				h.mood = "/list"
+			}
+
 			if err := h.Next(u.CallbackQuery.Message.Chat.ID, u.CallbackData()); err != nil {
 				return fmt.Errorf("error in 'next' func: %s", err.Error())
 			}

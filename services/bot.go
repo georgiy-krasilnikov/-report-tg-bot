@@ -7,8 +7,6 @@ import (
 	tg "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
-var isCreate bool
-
 func (h *Handler) Start(chatID int64) error {
 	msg := tg.NewMessage(chatID, "Привет! Для начала выбери, что ты хочешь сделать.")
 	msg.ReplyMarkup = tg.NewInlineKeyboardMarkup(
@@ -26,11 +24,7 @@ func (h *Handler) Start(chatID int64) error {
 }
 
 func (h *Handler) Next(chatID int64, s string) error {
-	if s == "/create" {
-		isCreate = true
-	}
-
-	if isCreate {
+	if h.mood == "/create" {
 		if err := h.CreateBranch(chatID, s); err != nil {
 			return fmt.Errorf("error in 'Create' branch: %s", err.Error())
 		}
@@ -39,8 +33,6 @@ func (h *Handler) Next(chatID int64, s string) error {
 			return fmt.Errorf("error in 'List' branch: %s", err.Error())
 		}
 	}
-	// case (h.data.Table.ItemsNumber == 0 && h.data.Time != "") || s == "/add":
-	//
 
 	return nil
 }

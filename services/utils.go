@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	tg "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
@@ -30,56 +31,86 @@ func (h *Handler) NewCars(s []string) {
 }
 
 func (h *Handler) AddData(s string) error {
-	//var id string
-	fmt.Println(h.data)
-	
-	switch true {
-	case strings.HasPrefix(s, "/") || s == "":
-		return nil
+	if h.mood == "/create" {
+		switch true {
+		case s == "":
+			return nil
 
-	case strings.HasSuffix(s, ".docx"):
-		h.doc.DocName = s
-		h.doc.DocPath = "docs/" + s
+		case h.data.Event == "" && !isNumber(s):
+			h.data.Event = s
 
-	case h.data.Event == "" && !isNumber(s):
-		h.data.Event = s
+		case h.data.How == "" && h.data.Event != "" && !isNumber(s):
+			h.data.How = s
 
-	case h.data.How == "" && h.data.Event != "" && !isNumber(s):
-		h.data.How = s
+		case h.data.Date == "" && h.data.How != "" && isDate(s).Error() == "":
+			h.data.Date = s
 
-	case (h.data.Date == "" && h.data.How != "") || strings.Contains(s, ".20"):
-		h.data.Date = s
+		case h.data.Time == "" && h.data.Date != "" && isTime(s).Error() == "":
+			h.data.Time = s
 
-	case h.data.Time == "" && h.data.Date != "" && strings.Contains(s, ":"):
-		h.data.Time = s
+		case h.data.Table.ItemsNumber == 0 && isNumber(s):
+			n, err := strconv.Atoi(s)
+			if err != nil {
+				return fmt.Errorf("failed to add ItemsNumber: %s", err.Error())
+			}
 
-	case h.data.Table.ItemsNumber == 0 && isNumber(s):
-		n, err := strconv.Atoi(s)
-		if err != nil {
-			return fmt.Errorf("failed to add ItemsNumber: %s", err.Error())
+			h.data.Table.ItemsNumber = n
+
+		case h.data.Table.Items == nil && h.data.Table.ItemsNumber != 0:
+			h.NewItems(strings.Split(s, " | "))
+
+		case h.data.Table.Items != nil && isNumber(s):
+			n, err := strconv.Atoi(s)
+			if err != nil {
+				return fmt.Errorf("failed to add CarsNumber: %s", err.Error())
+			}
+
+			h.data.Table.CarsNumber = n
+
+		case h.data.Table.Cars == nil && h.data.Table.CarsNumber != 0:
+			h.NewCars(strings.Split(s, " | "))
 		}
+	} else if h.mood == "/list" {
+		switch true {
+		case strings.HasPrefix(s, "/") || s == "":
+			return nil
 
-		h.data.Table.ItemsNumber = n
+		case strings.HasSuffix(s, ".docx"):
+			if err := h.NewDoc(s, "docs/"+s); err != nil {
+				return fmt.Errorf("failed to assign doc to handler: %s", err.Error())
+			}
 
-	case h.data.Table.Items == nil && h.data.Table.ItemsNumber != 0:
-		h.NewItems(strings.Split(s, " | "))
+		case h.data.Date == "" && isDate(s).Error() == "":
+			h.data.Date = s
 
-	case h.data.Table.Items != nil && isNumber(s):
-		n, err := strconv.Atoi(s)
-		if err != nil {
-			return fmt.Errorf("failed to add CarsNumber: %s", err.Error())
+		case h.data.Table.ItemsNumber == 0 && isNumber(s):
+			n, err := strconv.Atoi(s)
+			if err != nil {
+				return fmt.Errorf("failed to add ItemsNumber: %s", err.Error())
+			}
+
+			h.data.Table.ItemsNumber = n
+
+		case h.data.Table.Items == nil && h.data.Table.ItemsNumber != 0:
+			h.NewItems(strings.Split(s, " | "))
+
+		case h.data.Table.Items != nil && isNumber(s):
+			n, err := strconv.Atoi(s)
+			if err != nil {
+				return fmt.Errorf("failed to add CarsNumber: %s", err.Error())
+			}
+
+			h.data.Table.CarsNumber = n
+
+		case h.data.Table.Cars == nil && h.data.Table.CarsNumber != 0:
+			h.NewCars(strings.Split(s, " | "))
 		}
-
-		h.data.Table.CarsNumber = n
-
-	case h.data.Table.Cars == nil && h.data.Table.CarsNumber != 0:
-		h.NewCars(strings.Split(s, " | "))
 	}
 
 	return nil
 }
 
-func newKeyboard(lst []string, data []string) tg.InlineKeyboardMarkup {
+func newKeyboard(lst, data []string) tg.InlineKeyboardMarkup {
 	var kbrd [][]tg.InlineKeyboardButton
 	size := 2
 
@@ -89,7 +120,6 @@ func newKeyboard(lst []string, data []string) tg.InlineKeyboardMarkup {
 		}
 
 		var btns []tg.InlineKeyboardButton
-
 		for j := i; len(btns) < size; j++ {
 			btns = append(btns, tg.NewInlineKeyboardButtonData(lst[j], data[j]))
 		}
@@ -112,4 +142,22 @@ func isNumber(s string) bool {
 	}
 
 	return true
+}
+
+func isDate(s string) error {
+	_, err := time.Parse(s, "02.01.2006")
+	if err != nil {
+		return fmt.Errorf("invalid date format: %s", err.Error())
+	}
+
+	return nil
+}
+
+func isTime(s string) error {
+	_, err := time.Parse(s, "15:04")
+	if err != nil {
+		return fmt.Errorf("invalid time format: %s", err.Error())
+	}
+
+	return nil
 }

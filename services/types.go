@@ -1,6 +1,9 @@
 package services
 
-import "github.com/lukasjarosch/go-docx"
+import (
+	"baliance.com/gooxml/document"
+	"github.com/lukasjarosch/go-docx"
+)
 
 type Data struct {
 	Event string
@@ -33,5 +36,6 @@ type Doc struct {
 	DocName    string
 	DocPath    string
 	DocX       *docx.Document
+	Doc        *document.Document
 	ReplaceMap docx.PlaceholderMap
 }

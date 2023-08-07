@@ -5,13 +5,12 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-	"time"
 
 	"baliance.com/gooxml/document"
 	"github.com/lukasjarosch/go-docx"
 )
 
-func (h *Handler) NewDoc() error {
+func (h *Handler) NewDocX() error {
 	doc, err := docx.Open("file.docx")
 	if err != nil {
 		return fmt.Errorf("failed to open doc: %s", err.Error())
@@ -32,8 +31,21 @@ func (h *Handler) NewDoc() error {
 	return nil
 }
 
+func (h *Handler) NewDoc(name, path string) error {
+	doc, err := document.Open(path)
+	if err != nil {
+		return fmt.Errorf("failed to open document: %s", err.Error())
+	}
+
+	h.doc.Doc = doc
+	h.doc.DocName = name
+	h.doc.DocPath = path
+
+	return nil
+}
+
 func (h *Handler) CreateDocument() error {
-	if err := h.NewDoc(); err != nil || h.doc == nil {
+	if err := h.NewDocX(); err != nil || h.doc == nil {
 		return fmt.Errorf("failed to create new doc: %s", err.Error())
 	}
 
@@ -51,7 +63,7 @@ func (h *Handler) CreateDocument() error {
 	}
 
 	for i := 0; i < h.data.Table.ItemsNumber; i++ {
-		row := doc.Tables()[1].InsertRowAfter(doc.Tables()[1].Rows()[i])
+		row := h.doc.Doc.Tables()[1].InsertRowAfter(h.doc.Doc.Tables()[1].Rows()[i])
 		for i := 0; i < 5; i++ {
 			row.AddCell().AddParagraph()
 		}
@@ -62,7 +74,7 @@ func (h *Handler) CreateDocument() error {
 	}
 
 	for i := h.data.Table.ItemsNumber; i-h.data.Table.ItemsNumber < h.data.Table.CarsNumber; i++ {
-		row := doc.Tables()[1].InsertRowAfter(doc.Tables()[1].Rows()[i+2])
+		row := h.doc.Doc.Tables()[1].InsertRowAfter(h.doc.Doc.Tables()[1].Rows()[i+2])
 
 		row.AddCell().AddParagraph().AddRun().AddText(strconv.Itoa(i - h.data.Table.ItemsNumber + 1))
 		row.AddCell().AddParagraph().AddRun().AddText(h.data.Table.Cars[i-h.data.Table.ItemsNumber].Brand)
@@ -79,17 +91,17 @@ func (h *Handler) CreateDocument() error {
 }
 
 func GetListOfDocuments() ([]string, error) {
-	m, err := filepath.Glob("docs/*.docx")
+	matches, err := filepath.Glob("docs/*.docx")
 	if err != nil {
 		return nil, fmt.Errorf("failed to get list of files: %s", err.Error())
 	}
 
-	var lst []string
-	for _, v := range m {
-		lst = append(lst, strings.TrimPrefix(v, "docs/"))
+	var docs []string
+	for _, m := range matches {
+		docs = append(docs, strings.TrimPrefix(m, "docs/"))
 	}
 
-	return lst, nil
+	return docs, nil
 }
 
 // func (h *Handler) DeleteDocument() error {
@@ -110,21 +122,11 @@ func GetListOfDocuments() ([]string, error) {
 // }
 
 func (h *Handler) EditDate() error {
-	_, err := time.Parse(h.data.Date, "02.01.2006")
-	if err != nil {
-		return fmt.Errorf("invalid date format: %s", err.Error())
-	}
+	h.doc.Doc.Paragraphs()[4].AddRun().AddText(h.data.Date)
+	h.doc.Doc.Paragraphs()[4].SetStyle("Text Body")
+	h.doc.Doc.Paragraphs()[4].RemoveRun(h.doc.Doc.Paragraphs()[4].Runs()[0])
 
-	doc, err := document.Open(h.doc.DocPath)
-	if err != nil {
-		return fmt.Errorf("failed to open document: %s", err.Error())
-	}
-
-	doc.Paragraphs()[4].AddRun().AddText(h.data.Date)
-	doc.Paragraphs()[4].SetStyle("Text Body")
-	doc.Paragraphs()[4].RemoveRun(doc.Paragraphs()[4].Runs()[0])
-
-	if err := doc.SaveToFile("docs/Рапорт." + h.data.Date + ".docx"); err != nil {
+	if err := h.doc.Doc.SaveToFile("docs/Рапорт." + h.data.Date + ".docx"); err != nil {
 		return fmt.Errorf("failed to save edit file: %s", err.Error())
 	}
 
@@ -132,16 +134,11 @@ func (h *Handler) EditDate() error {
 }
 
 func (h *Handler) GetListOfItems() ([][]string, error) {
-	doc, err := document.Open(h.doc.DocPath)
-	if err != nil {
-		return nil, fmt.Errorf("failed to open document: %s", err.Error())
-	}
-
 	var lst [][]string
-	for i := 1; strconv.Itoa(i) == doc.Tables()[1].Rows()[i].Cells()[0].Paragraphs()[0].Runs()[0].Text(); i++ {
+	for i := 1; strconv.Itoa(i) == h.doc.Doc.Tables()[1].Rows()[i].Cells()[0].Paragraphs()[0].Runs()[0].Text(); i++ {
 		var row []string
 		for j := 0; j < 3; j++ {
-			row = append(row, doc.Tables()[1].Rows()[i].Cells()[j].Paragraphs()[0].Runs()[0].Text())
+			row = append(row, h.doc.Doc.Tables()[1].Rows()[i].Cells()[j].Paragraphs()[0].Runs()[0].Text())
 		}
 		lst = append(lst, row)
 	}
@@ -150,20 +147,15 @@ func (h *Handler) GetListOfItems() ([][]string, error) {
 }
 
 func (h *Handler) EditRow(id string) error {
-	doc, err := document.Open(h.doc.DocPath)
-	if err != nil {
-		return fmt.Errorf("failed to open document: %s", err.Error())
-	}
-
-	for i := 1; strconv.Itoa(i) == doc.Tables()[1].Rows()[i].Cells()[0].Paragraphs()[0].Runs()[0].Text(); i++ {
+	for i := 1; strconv.Itoa(i) == h.doc.Doc.Tables()[1].Rows()[i].Cells()[0].Paragraphs()[0].Runs()[0].Text(); i++ {
 		if strconv.Itoa(i) == id {
-			doc.Tables()[1].Rows()[i].Cells()[1].Paragraphs()[0].Runs()[0].ClearContent()
-			doc.Tables()[1].Rows()[i].Cells()[2].Paragraphs()[0].Runs()[0].ClearContent()
+			h.doc.Doc.Tables()[1].Rows()[i].Cells()[1].Paragraphs()[0].Runs()[0].ClearContent()
+			h.doc.Doc.Tables()[1].Rows()[i].Cells()[2].Paragraphs()[0].Runs()[0].ClearContent()
 
 		}
 	}
 
-	if err := doc.SaveToFile(h.doc.DocPath); err != nil {
+	if err := h.doc.Doc.SaveToFile(h.doc.DocPath); err != nil {
 		return fmt.Errorf("failed to save edit file: %s", err.Error())
 	}
 
