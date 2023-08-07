@@ -7,6 +7,8 @@ import (
 	tg "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
+var id string
+
 func (h *Handler) Start(chatID int64) error {
 	msg := tg.NewMessage(chatID, "Привет! Для начала выбери, что ты хочешь сделать.")
 	msg.ReplyMarkup = tg.NewInlineKeyboardMarkup(
@@ -66,22 +68,21 @@ func (h *Handler) CreateBranch(chatID int64, s string) error {
 	case h.data.Time == "" && h.data.Date != "" && h.data.Event != "":
 		msg = tg.NewMessage(chatID, "Теперь введи время выноса. *Пример:* _9:00 до 12:00_.")
 
-	case (h.data.Table.ItemsNumber == 0 && h.data.Time != ""):
-		msg = tg.NewMessage(chatID, "Теперь введи количество видов предметов. *Пример:* если у нас 1 ящик, 2 стула и 1 стол: _3_, если у нас 3 стула, то: _1_.")
-
-	case h.data.Table.Items == nil && h.data.Table.ItemsNumber != 0:
+	case h.data.Table.Items == nil && h.data.Time != "":
 		msg = tg.NewMessage(chatID, "Теперь введи предметы, которые ты собираешься выносить. Для рапорта нужны следующие параметры: наименование предмета и его количество. *Пример:* _Стул, 2_. Если у тебя *несколько предметов*, то пиши их так: _Стул, 2 | Стол, 1_.")
 
 	case s == "/empty" || h.data.Table.Cars != nil:
+		if err := h.CreateDocument(); err != nil {
+			return fmt.Errorf("failed to create document: %s", err.Error())
+		}
+
 		if err := h.SendDocument(chatID); err != nil {
 			return fmt.Errorf("failed to send document: %s", err.Error())
 		}
+
 		return nil
 
-	case h.data.Table.Items != nil && h.data.Table.CarsNumber == 0:
-		msg = tg.NewMessage(chatID, "Если ты хочешь добавить в таблицу автомобили, то введи их количество. *Пример:* 2.\n\nИначе, отправь */empty*")
-
-	case h.data.Table.Cars == nil && h.data.Table.CarsNumber != 0:
+	case h.data.Table.Items != nil && h.data.Table.Cars == nil:
 		msg = tg.NewMessage(chatID, "Теперь введи данные автомобилей, которые ты собираешься добавить. Для рапорта нужны следующие параметры: марка автомобиля, его госномер, твоё ФИО, и твой номер телефона. *Пример:* _Volkswagen Polo, А000ВС77, Иванов Иван Иванович, +7800553535_. Если у тебя *несколько автомобилей*, то пиши их так: _Volkswagen Polo, А000ВС77, Иванов Иван Иванович, +78005553535 | Kia Rio, А111ВС77, Александров Александр Александрович, +78005554545_.")
 
 	default:
@@ -110,12 +111,12 @@ func (h *Handler) ListBranch(chatID int64, s string) error {
 
 	case s == "/list":
 		msg = tg.NewMessage(chatID, "Теперь выбери рапорт:")
-		lst, err := GetListOfDocuments()
+		docs, err := GetListOfDocuments()
 		if err != nil {
 			return fmt.Errorf("failed to get list of documents: %s", err.Error())
 		}
 
-		msg.ReplyMarkup = newKeyboard(lst, lst)
+		msg.ReplyMarkup = newKeyboard(docs, docs)
 
 	case strings.HasSuffix(s, ".docx"):
 		msg = tg.NewMessage(chatID, "Теперь выбери что ты хочешь сделать с выбранным рапортом:")
@@ -127,11 +128,11 @@ func (h *Handler) ListBranch(chatID int64, s string) error {
 		)
 
 	case s == "/get":
-		msg := tg.NewDocument(chatID, tg.FilePath(h.doc.DocPath))
-		msg.Caption = "Вот твой рапорт 👆"
-		if _, err := h.Send(msg); err != nil {
-			return fmt.Errorf("failed to send msg with document: %s", err.Error())
+		if err := h.SendDocument(chatID); err != nil {
+			return fmt.Errorf("failed to send document: %s", err.Error())
 		}
+
+		return nil
 
 	case s == "/edit":
 		if err := h.SendEditMessage(chatID); err != nil {
@@ -142,11 +143,16 @@ func (h *Handler) ListBranch(chatID int64, s string) error {
 	case s == "/data":
 		msg = tg.NewMessage(chatID, "Теперь введи дату выноса в следующем формате: _дд.мм.гггг_. *Пример:* _31.12.2022_.")
 
-	// case err = time.Parse(layout1, "02/01/2006"); err != nil: h.data.How == "":
-	// 	if err := h.EditDate(); err != nil {
-	// 		return fmt.Errorf("failed to send edit document: %s", err.Error())
-	// 	}
-	// 	return nil
+	case isDate(s)  == "":
+		if err := h.EditDate(); err != nil {
+			return fmt.Errorf("failed to edit date in document: %s", err.Error())
+		}
+
+		if err := h.SendDocument(chatID); err != nil {
+			return fmt.Errorf("failed to send document: %s", err.Error())
+		}
+
+		return nil
 
 	case s == "/items":
 		msg = tg.NewMessage(chatID, "Теперь выбери, что ты хочешь сделать со списком предметов:")
@@ -158,23 +164,29 @@ func (h *Handler) ListBranch(chatID int64, s string) error {
 		)
 
 	case s == "/replace":
-		if err := h.SendItemTableMessage(chatID); err != nil {
+		if err := h.SendItemMessage(chatID); err != nil {
 			return fmt.Errorf("failed to send item table: %s", err.Error())
 		}
 
 		return nil
 
-	case s == "/add":
-		msg = tg.NewMessage(chatID, "Теперь введи количество видов предметов, которые ты хочешь добавить. *Пример:* если у нас 1 ящик, 2 стула и 1 стол: _3_, если у нас 3 стула, то: _1_.")
+	case strings.HasPrefix(s, "id: "):
+		id = strings.TrimPrefix(s, "id: ")
+		msg = tg.NewMessage(chatID, "Теперь введи данные о новом предмете. Для рапорта нужны следующие параметры: наименование предмета и его количество. *Пример:* _Стул, 2_.")
 
-	case h.data.Table.Items == nil && h.data.Table.ItemsNumber != 0 && isNumber(s):
+	case s == "/add":
 		msg = tg.NewMessage(chatID, "Теперь введи предметы, которые ты собираешься добавить. Для рапорта нужны следующие параметры: наименование предмета и его количество. *Пример:* _Стул, 2_. Если у тебя *несколько предметов*, то пиши их так: _Стул, 2 | Стол, 1_.")
 
-	case h.data.Table.Items != nil && h.data.Table.ItemsNumber != 0:
-		
+	case h.data.Table.Items != nil:
+		if err := h.EditRow(id); err != nil {
+			return fmt.Errorf("failed to edit row in document: %s", err.Error())
+		}
 
-	case strings.HasPrefix(s, "id: "):
-		msg = tg.NewMessage(chatID, "Теперь введи данные о новом предмете. Для рапорта нужны следующие параметры: наименование предмета и его количество. *Пример:* _Стул, 2_.")
+		if err := h.SendDocument(chatID); err != nil {
+			return fmt.Errorf("failed to send document: %s", err.Error())
+		}
+
+		return nil
 
 	default:
 		msg = tg.NewMessage(chatID, "Я не могу обработать эти данные.")
@@ -184,20 +196,6 @@ func (h *Handler) ListBranch(chatID int64, s string) error {
 
 	if _, err := h.Send(msg); err != nil {
 		return fmt.Errorf("failed to send 'List' msg: %s", err.Error())
-	}
-
-	return nil
-}
-
-func (h *Handler) SendDocument(chatID int64) error {
-	if err := h.CreateDocument(); err != nil {
-		return fmt.Errorf("failed to create document: %s", err.Error())
-	}
-
-	msg := tg.NewDocument(chatID, tg.FilePath(h.doc.DocPath))
-	msg.Caption = "Вот твой рапорт 👆"
-	if _, err := h.Send(msg); err != nil {
-		return fmt.Errorf("failed to send msg with document: %s", err.Error())
 	}
 
 	return nil
@@ -220,7 +218,7 @@ func (h *Handler) SendEditMessage(chatID int64) error {
 	return nil
 }
 
-func (h *Handler) SendItemTableMessage(chatID int64) error {
+func (h *Handler) SendItemMessage(chatID int64) error {
 	items, err := h.GetListOfItems()
 	if err != nil {
 		return fmt.Errorf("failed to get rows from table: %s", err.Error())
@@ -239,6 +237,16 @@ func (h *Handler) SendItemTableMessage(chatID int64) error {
 
 	if _, err := h.Send(msg); err != nil {
 		return fmt.Errorf("failed to send msg with items: %s", err.Error())
+	}
+
+	return nil
+}
+
+func (h *Handler) SendDocument(chatID int64) error {
+	msg := tg.NewDocument(chatID, tg.FilePath(h.doc.DocPath))
+	msg.Caption = "Вот твой рапорт 👆"
+	if _, err := h.Send(msg); err != nil {
+		return fmt.Errorf("failed to send msg with document: %s", err.Error())
 	}
 
 	return nil

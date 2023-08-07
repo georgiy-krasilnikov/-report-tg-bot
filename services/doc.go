@@ -2,6 +2,7 @@ package services
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -62,8 +63,8 @@ func (h *Handler) CreateDocument() error {
 		return fmt.Errorf("failed to open document: %s", err.Error())
 	}
 
-	for i := 0; i < h.data.Table.ItemsNumber; i++ {
-		row := h.doc.Doc.Tables()[1].InsertRowAfter(h.doc.Doc.Tables()[1].Rows()[i])
+	for i := 0; i < len(h.data.Table.Items); i++ {
+		row := doc.Tables()[1].InsertRowAfter(doc.Tables()[1].Rows()[i])
 		for i := 0; i < 5; i++ {
 			row.AddCell().AddParagraph()
 		}
@@ -73,14 +74,14 @@ func (h *Handler) CreateDocument() error {
 		row.Cells()[2].Paragraphs()[0].AddRun().AddText(h.data.Table.Items[i].Count)
 	}
 
-	for i := h.data.Table.ItemsNumber; i-h.data.Table.ItemsNumber < h.data.Table.CarsNumber; i++ {
-		row := h.doc.Doc.Tables()[1].InsertRowAfter(h.doc.Doc.Tables()[1].Rows()[i+2])
+	for i := len(h.data.Table.Items); i-len(h.data.Table.Items) < len(h.data.Table.Cars); i++ {
+		row := doc.Tables()[1].InsertRowAfter(doc.Tables()[1].Rows()[i+2])
 
-		row.AddCell().AddParagraph().AddRun().AddText(strconv.Itoa(i - h.data.Table.ItemsNumber + 1))
-		row.AddCell().AddParagraph().AddRun().AddText(h.data.Table.Cars[i-h.data.Table.ItemsNumber].Brand)
-		row.AddCell().AddParagraph().AddRun().AddText(h.data.Table.Cars[i-h.data.Table.ItemsNumber].Number)
-		row.AddCell().AddParagraph().AddRun().AddText(h.data.Table.Cars[i-h.data.Table.ItemsNumber].FullName)
-		row.AddCell().AddParagraph().AddRun().AddText(h.data.Table.Cars[i-h.data.Table.ItemsNumber].Telephone)
+		row.AddCell().AddParagraph().AddRun().AddText(strconv.Itoa(i - len(h.data.Table.Items) + 1))
+		row.AddCell().AddParagraph().AddRun().AddText(h.data.Table.Cars[i-len(h.data.Table.Items)].Brand)
+		row.AddCell().AddParagraph().AddRun().AddText(h.data.Table.Cars[i-len(h.data.Table.Items)].Number)
+		row.AddCell().AddParagraph().AddRun().AddText(h.data.Table.Cars[i-len(h.data.Table.Items)].FullName)
+		row.AddCell().AddParagraph().AddRun().AddText(h.data.Table.Cars[i-len(h.data.Table.Items)].Telephone)
 	}
 
 	if err := doc.SaveToFile(h.doc.DocPath); err != nil {
@@ -126,7 +127,13 @@ func (h *Handler) EditDate() error {
 	h.doc.Doc.Paragraphs()[4].SetStyle("Text Body")
 	h.doc.Doc.Paragraphs()[4].RemoveRun(h.doc.Doc.Paragraphs()[4].Runs()[0])
 
-	if err := h.doc.Doc.SaveToFile("docs/Рапорт." + h.data.Date + ".docx"); err != nil {
+	if err := os.Remove(h.doc.DocPath); err != nil {
+
+	}
+	h.doc.DocName = "Рапорт." + h.data.Date + ".docx"
+	h.doc.DocPath = "docs/" + h.doc.DocName
+
+	if err := h.doc.Doc.SaveToFile(h.doc.DocPath); err != nil {
 		return fmt.Errorf("failed to save edit file: %s", err.Error())
 	}
 
@@ -149,9 +156,11 @@ func (h *Handler) GetListOfItems() ([][]string, error) {
 func (h *Handler) EditRow(id string) error {
 	for i := 1; strconv.Itoa(i) == h.doc.Doc.Tables()[1].Rows()[i].Cells()[0].Paragraphs()[0].Runs()[0].Text(); i++ {
 		if strconv.Itoa(i) == id {
+			fmt.Println(h.data)
 			h.doc.Doc.Tables()[1].Rows()[i].Cells()[1].Paragraphs()[0].Runs()[0].ClearContent()
 			h.doc.Doc.Tables()[1].Rows()[i].Cells()[2].Paragraphs()[0].Runs()[0].ClearContent()
-
+			h.doc.Doc.Tables()[1].Rows()[i].Cells()[1].Paragraphs()[0].Runs()[0].AddText(h.data.Table.Items[i-1].Name)
+			h.doc.Doc.Tables()[1].Rows()[i].Cells()[2].Paragraphs()[0].Runs()[0].AddText(h.data.Table.Items[i-1].Count)
 		}
 	}
 
@@ -159,5 +168,11 @@ func (h *Handler) EditRow(id string) error {
 		return fmt.Errorf("failed to save edit file: %s", err.Error())
 	}
 
+	return nil
+}
+
+func (h *Handler) AddRow() error {
+	for i := 0; i < len(h.data.Table.Items); i++ {
+	}
 	return nil
 }

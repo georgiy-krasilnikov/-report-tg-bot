@@ -14,9 +14,7 @@ type Data struct {
 }
 
 type Table struct {
-	ItemsNumber int
 	Items       []Item
-	CarsNumber  int
 	Cars        []Car
 }
 
