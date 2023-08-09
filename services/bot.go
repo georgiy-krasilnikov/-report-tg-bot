@@ -190,7 +190,6 @@ func (h *Handler) ListBranch(chatID int64, s string) error {
 		return nil
 
 	case h.data.Table.Items != nil && id == "":
-		fmt.Println("ok")
 		if err := h.AddRow(); err != nil {
 			return fmt.Errorf("failed to add row in document: %s", err.Error())
 		}

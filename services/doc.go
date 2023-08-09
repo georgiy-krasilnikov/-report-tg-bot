@@ -157,7 +157,6 @@ func (h *Handler) GetListOfItems() ([][]string, error) {
 func (h *Handler) EditRow(id string) error {
 	for i := 1; strconv.Itoa(i) == h.doc.Doc.Tables()[1].Rows()[i].Cells()[0].Paragraphs()[0].Runs()[0].Text(); i++ {
 		if strconv.Itoa(i) == id {
-			fmt.Println(h.data)
 			h.doc.Doc.Tables()[1].Rows()[i].Cells()[1].Paragraphs()[0].Runs()[0].ClearContent()
 			h.doc.Doc.Tables()[1].Rows()[i].Cells()[2].Paragraphs()[0].Runs()[0].ClearContent()
 			h.doc.Doc.Tables()[1].Rows()[i].Cells()[1].Paragraphs()[0].Runs()[0].AddText(h.data.Table.Items[i-1].Name)
@@ -182,7 +181,7 @@ func (h *Handler) AddRow() error {
 
 	for i := 0; i < len(h.data.Table.Items); i++ {
 		row := h.doc.Doc.Tables()[1].InsertRowAfter(h.doc.Doc.Tables()[1].Rows()[id])
-		for j := 0; j < 5; i++ {
+		for j := 0; j < 5; j++ {
 			row.AddCell().AddParagraph()
 		}
 
@@ -191,7 +190,7 @@ func (h *Handler) AddRow() error {
 		row.Cells()[2].Paragraphs()[0].AddRun().AddText(h.data.Table.Items[i].Count)
 		id++
 	}
-
+	
 	if err := h.doc.Doc.SaveToFile(h.doc.DocPath); err != nil {
 		return fmt.Errorf("failed to save edit file: %s", err.Error())
 	}
