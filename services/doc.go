@@ -128,8 +128,9 @@ func (h *Handler) EditDate() error {
 	h.doc.Doc.Paragraphs()[4].RemoveRun(h.doc.Doc.Paragraphs()[4].Runs()[0])
 
 	if err := os.Remove(h.doc.DocPath); err != nil {
-
+		return fmt.Errorf("failed to remove document: %s", err.Error())
 	}
+
 	h.doc.DocName = "Рапорт." + h.data.Date + ".docx"
 	h.doc.DocPath = "docs/" + h.doc.DocName
 
@@ -172,7 +173,28 @@ func (h *Handler) EditRow(id string) error {
 }
 
 func (h *Handler) AddRow() error {
-	for i := 0; i < len(h.data.Table.Items); i++ {
+	rows, err := h.GetListOfItems()
+	if err != nil {
+		return fmt.Errorf("failed to get list of items: %s", err.Error())
 	}
+
+	id := len(rows)
+
+	for i := 0; i < len(h.data.Table.Items); i++ {
+		row := h.doc.Doc.Tables()[1].InsertRowAfter(h.doc.Doc.Tables()[1].Rows()[id])
+		for j := 0; j < 5; i++ {
+			row.AddCell().AddParagraph()
+		}
+
+		row.Cells()[0].Paragraphs()[0].AddRun().AddText(strconv.Itoa(id + 1))
+		row.Cells()[1].Paragraphs()[0].AddRun().AddText(h.data.Table.Items[i].Name)
+		row.Cells()[2].Paragraphs()[0].AddRun().AddText(h.data.Table.Items[i].Count)
+		id++
+	}
+
+	if err := h.doc.Doc.SaveToFile(h.doc.DocPath); err != nil {
+		return fmt.Errorf("failed to save edit file: %s", err.Error())
+	}
+
 	return nil
 }

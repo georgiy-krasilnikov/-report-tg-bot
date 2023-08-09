@@ -138,12 +138,13 @@ func (h *Handler) ListBranch(chatID int64, s string) error {
 		if err := h.SendEditMessage(chatID); err != nil {
 			return fmt.Errorf("failed to send 'edit' msg: %s", err.Error())
 		}
+
 		return nil
 
 	case s == "/data":
-		msg = tg.NewMessage(chatID, "Теперь введи дату выноса в следующем формате: _дд.мм.гггг_. *Пример:* _31.12.2022_.")
+		msg = tg.NewMessage(chatID, "Теперь введи новую дату в следующем формате: _дд.мм.гггг_. *Пример:* _31.12.2022_.")
 
-	case isDate(s)  == "":
+	case isDate(s) == "":
 		if err := h.EditDate(); err != nil {
 			return fmt.Errorf("failed to edit date in document: %s", err.Error())
 		}
@@ -177,9 +178,21 @@ func (h *Handler) ListBranch(chatID int64, s string) error {
 	case s == "/add":
 		msg = tg.NewMessage(chatID, "Теперь введи предметы, которые ты собираешься добавить. Для рапорта нужны следующие параметры: наименование предмета и его количество. *Пример:* _Стул, 2_. Если у тебя *несколько предметов*, то пиши их так: _Стул, 2 | Стол, 1_.")
 
-	case h.data.Table.Items != nil:
+	case h.data.Table.Items != nil && id != "":
 		if err := h.EditRow(id); err != nil {
 			return fmt.Errorf("failed to edit row in document: %s", err.Error())
+		}
+
+		if err := h.SendDocument(chatID); err != nil {
+			return fmt.Errorf("failed to send document: %s", err.Error())
+		}
+
+		return nil
+
+	case h.data.Table.Items != nil && id == "":
+		fmt.Println("ok")
+		if err := h.AddRow(); err != nil {
+			return fmt.Errorf("failed to add row in document: %s", err.Error())
 		}
 
 		if err := h.SendDocument(chatID); err != nil {
