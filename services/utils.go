@@ -82,7 +82,7 @@ func newKeyboard(lst, data []string) tg.InlineKeyboardMarkup {
 	size := 2
 
 	for i := 0; i < len(lst); i += 2 {
-		if len(lst)-i == 1 {
+		if len(lst)-i == 1 || len(lst[i]) > 36 {
 			size = 1
 		}
 

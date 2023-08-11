@@ -10,7 +10,7 @@ import (
 
 func main() {
 	if err := godotenv.Load(); err != nil {
-
+		panic(err)
 	}
 
 	botToken := os.Getenv("BOT_TOKEN")
