@@ -51,7 +51,7 @@ func (h *Handler) CreateBranch(chatID int64, s string) error {
 		return fmt.Errorf("s can't be empty")
 
 	case s == "/create":
-		msg = tg.NewMessage(chatID, "Сначала введи мероприятие, для которого тебе нужен рапорт, начиная со слов после _В связи с_. *Пример:* _редакторским просмотром фестивался творчества \"Студенческая весна\"_.")
+		msg = tg.NewMessage(chatID, "Сначала введи мероприятие, для которого тебе нужен рапорт, начиная со слов после _В связи с_. *Пример:* _редакторским просмотром фестиваля творчества \"Студенческая весна\"_.")
 
 	case h.data.How == "" && h.data.Event != "":
 		msg = tg.NewMessage(chatID, "Теперь выбери, каким образом ты будешь выносить предметы:")
@@ -62,16 +62,19 @@ func (h *Handler) CreateBranch(chatID int64, s string) error {
 			),
 		)
 
-	case (h.data.Date == "" && h.data.How != ""):
-		msg = tg.NewMessage(chatID, "Теперь введи дату выноса в следующем формате: _дд.мм.гггг_. *Пример:* _31.12.2022_.")
+	case h.data.Date == "" && h.data.How != "":
+		msg = tg.NewMessage(chatID, "Теперь введи дату в следующем формате: _дд.мм.гггг_. *Пример:* _31.12.2022_.")
 
 	case h.data.Time == "" && h.data.Date != "" && h.data.Event != "":
-		msg = tg.NewMessage(chatID, "Теперь введи время выноса. *Пример:* _9:00 до 12:00_.")
+		msg = tg.NewMessage(chatID, "Теперь введи время. *Пример:* _9:00 до 12:00_.")
 
-	case h.data.Table.Items == nil && h.data.Time != "":
-		msg = tg.NewMessage(chatID, "Теперь введи предметы, которые ты собираешься выносить. Для рапорта нужны следующие параметры: наименование предмета и его количество. *Пример:* _Стул, 2_. Если у тебя *несколько предметов*, то пиши их так: _Стул, 2 | Стол, 1_.")
+	case h.data.Table.Items == nil && h.data.Time != "" && h.data.Table.Cars == nil && s != "/empty":
+		msg = tg.NewMessage(chatID, "Теперь введи предметы, которые ты собираешься добавить в рапорт. Для рапорта нужны следующие параметры: наименование предмета и его количество. *Пример:* _Стул, 2_. Если у тебя *несколько предметов*, то пиши их так: _Стул, 2 | Стол, 1_. Если ты не хочешь добавлть предметы, а хочешь добавить только автомобили, то отправь */empty*.")
 
-	case s == "/empty" || h.data.Table.Cars != nil:
+	case (h.data.Table.Items != nil && h.data.Table.Cars == nil && s != "/empty") || (h.data.Table.Items == nil && h.data.Table.Cars == nil && s == "/empty"):
+		msg = tg.NewMessage(chatID, "Теперь введи данные автомобилей, которые ты собираешься добавить. Если ты не собираешься добавлять автомобили в рапорт, то отправь */empty*. Для рапорта нужны следующие параметры: марка автомобиля, его госномер, его ФИО, и его номер телефона. *Пример:* _Volkswagen Polo, А000ВС77, Иванов Иван Иванович, +78005553535_. Если у тебя *несколько автомобилей*, то пиши их так: _Volkswagen Polo, А000ВС77, Иванов Иван Иванович, +78005553535 | Kia Rio, А111ВС77, Александров Александр Александрович, +78005554545_.")
+
+	case (s == "/empty" && h.data.Table.Items != nil) || h.data.Table.Cars != nil || (s == "/empty" && h.data.Table.Cars != nil):
 		if err := h.CreateDocument(); err != nil {
 			return fmt.Errorf("failed to create document: %s", err.Error())
 		}
@@ -81,9 +84,6 @@ func (h *Handler) CreateBranch(chatID int64, s string) error {
 		}
 
 		return nil
-
-	case h.data.Table.Items != nil && h.data.Table.Cars == nil:
-		msg = tg.NewMessage(chatID, "Теперь введи данные автомобилей, которые ты собираешься добавить. Для рапорта нужны следующие параметры: марка автомобиля, его госномер, твоё ФИО, и твой номер телефона. *Пример:* _Volkswagen Polo, А000ВС77, Иванов Иван Иванович, +7800553535_. Если у тебя *несколько автомобилей*, то пиши их так: _Volkswagen Polo, А000ВС77, Иванов Иван Иванович, +78005553535 | Kia Rio, А111ВС77, Александров Александр Александрович, +78005554545_.")
 
 	default:
 		msg = tg.NewMessage(chatID, "Я не могу обработать эти данные.")
@@ -159,8 +159,8 @@ func (h *Handler) ListBranch(chatID int64, s string) error {
 		msg = tg.NewMessage(chatID, "Теперь выбери, что ты хочешь сделать со списком предметов:")
 		msg.ReplyMarkup = tg.NewInlineKeyboardMarkup(
 			tg.NewInlineKeyboardRow(
-				tg.NewInlineKeyboardButtonData("Корректировать предмет(-ы)", "/replace"),
-				tg.NewInlineKeyboardButtonData("Добавить предметы(-ы)", "/add"),
+				tg.NewInlineKeyboardButtonData("Изменить данные", "/edit item"),
+				tg.NewInlineKeyboardButtonData("Добавить предметы(-ы)", "/add item"),
 			),
 		)
 
@@ -168,33 +168,54 @@ func (h *Handler) ListBranch(chatID int64, s string) error {
 		msg = tg.NewMessage(chatID, "Теперь выбери, что ты хочешь сделать со списком автомобилей:")
 		msg.ReplyMarkup = tg.NewInlineKeyboardMarkup(
 			tg.NewInlineKeyboardRow(
-				tg.NewInlineKeyboardButtonData("Изменить данные", "/replace car"),
-				tg.NewInlineKeyboardButtonData("Добавить автомобиль(-и)", "/add сar"),
+				tg.NewInlineKeyboardButtonData("Изменить данные", "/edit car"),
+				tg.NewInlineKeyboardButtonData("Добавить автомобиль(-и)", "/add car"),
 			),
 		)
 
-	case s == "/replace":
+	case s == "/edit item":
 		if err := h.SendItemMessage(chatID); err != nil {
 			return fmt.Errorf("failed to send item table: %s", err.Error())
 		}
 
 		return nil
 
-	case s == "/replace car":
+	case s == "/edit car":
 		if err := h.SendAutoMessage(chatID); err != nil {
 			return fmt.Errorf("failed to send auto table: %s", err.Error())
 		}
 
-	case strings.HasPrefix(s, "id: "):
-		id = strings.TrimPrefix(s, "id: ")
-		msg = tg.NewMessage(chatID, "Теперь введи данные о новом предмете. Для рапорта нужны следующие параметры: наименование предмета и его количество. *Пример:* _Стул, 2_.")
+		return nil
 
-	case s == "/add":
+	case strings.HasPrefix(s, "item id: "):
+		id = strings.TrimPrefix(s, "item id: ")
+		msg = tg.NewMessage(chatID, "Теперь введи новые данные. Для рапорта нужны следующие параметры: наименование предмета и его количество. *Пример:* _Стул, 2_.")
+
+	case strings.HasPrefix(s, "car id: "):
+		id = strings.TrimPrefix(s, "car id: ")
+		msg = tg.NewMessage(chatID, "Теперь введи новые данные. Для рапорта нужны следующие параметры: марка автомобиля, его госномер, ФИО владельца, и его номер телефона. *Пример:* _Volkswagen Polo, А000ВС77, Иванов Иван Иванович, +7800553535_. Если у тебя *несколько автомобилей*, то пиши их так: _Volkswagen Polo, А000ВС77, Иванов Иван Иванович, +78005553535 | Kia Rio, А111ВС77, Александров Александр Александрович, +78005554545_.")
+
+	case s == "/add item":
 		msg = tg.NewMessage(chatID, "Теперь введи предметы, которые ты собираешься добавить. Для рапорта нужны следующие параметры: наименование предмета и его количество. *Пример:* _Стул, 2_. Если у тебя *несколько предметов*, то пиши их так: _Стул, 2 | Стол, 1_.")
 
+	case s == "/add car":
+		msg = tg.NewMessage(chatID, "Теперь введи данные автомобилей, которые ты собираешься добавить. Для рапорта нужны следующие параметры: марка автомобиля, его госномер, его ФИО, и его номер телефона. *Пример:* _Volkswagen Polo, А000ВС77, Иванов Иван Иванович, +78005553535_. Если у тебя *несколько автомобилей*, то пиши их так: _Volkswagen Polo, А000ВС77, Иванов Иван Иванович, +78005553535 | Kia Rio, А111ВС77, Александров Александр Александрович, +78005554545_.")
+
+	case h.data.Table.Cars != nil && id != "":
+		if err := h.EditCarRow(id); err != nil {
+			return fmt.Errorf("failed to edit car row in document: %s", err.Error())
+		}
+
+		if err := h.SendDocument(chatID); err != nil {
+			return fmt.Errorf("failed to send document: %s", err.Error())
+		}
+
+		return nil
+
 	case h.data.Table.Items != nil && id != "":
-		if err := h.EditRow(id); err != nil {
-			return fmt.Errorf("failed to edit row in document: %s", err.Error())
+
+		if err := h.EditItemRow(id); err != nil {
+			return fmt.Errorf("failed to edit item row in document: %s", err.Error())
 		}
 
 		if err := h.SendDocument(chatID); err != nil {
@@ -204,8 +225,19 @@ func (h *Handler) ListBranch(chatID int64, s string) error {
 		return nil
 
 	case h.data.Table.Items != nil && id == "":
-		if err := h.AddRow(); err != nil {
-			return fmt.Errorf("failed to add row in document: %s", err.Error())
+		if err := h.AddItemRow(); err != nil {
+			return fmt.Errorf("failed to add item row in document: %s", err.Error())
+		}
+
+		if err := h.SendDocument(chatID); err != nil {
+			return fmt.Errorf("failed to send document: %s", err.Error())
+		}
+
+		return nil
+
+	case h.data.Table.Cars != nil && id == "":
+		if err := h.AddCarRow(); err != nil {
+			return fmt.Errorf("failed to add car row in document: %s", err.Error())
 		}
 
 		if err := h.SendDocument(chatID); err != nil {
@@ -250,7 +282,7 @@ func (h *Handler) SendItemMessage(chatID int64) error {
 
 	for _, it := range items {
 		row = append(row, fmt.Sprintf("%s | %s", it[1], it[2]))
-		IDs = append(IDs, fmt.Sprintf("id: %s", it[0]))
+		IDs = append(IDs, fmt.Sprintf("item id: %s", it[0]))
 	}
 
 	msg := tg.NewMessage(chatID, "Теперь выбери, строчку, которую хочешь изменить:")
@@ -265,12 +297,15 @@ func (h *Handler) SendItemMessage(chatID int64) error {
 
 func (h *Handler) SendAutoMessage(chatID int64) error {
 	cars, err := h.GetListOfCars()
-	fmt.Println(cars)
 	if err != nil {
 		return fmt.Errorf("failed to get list of cars: %s", err.Error())
 	} else if err == nil && cars == nil {
 		if _, err := h.Send(tg.NewMessage(chatID, "В этом рапорте не указаны автомобили.")); err != nil {
-			return fmt.Errorf("failed to send msg with cars: %s", err.Error())
+			return fmt.Errorf("failed to send msg without cars: %s", err.Error())
+		}
+
+		if err := h.Start(chatID); err != nil {
+			return fmt.Errorf("failed to send start msg: %s", err.Error())
 		}
 	}
 

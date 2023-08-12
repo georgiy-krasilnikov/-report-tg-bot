@@ -24,6 +24,10 @@ func (h *Handler) NewItems(s []string) {
 }
 
 func (h *Handler) NewCars(s []string) {
+	if len(strings.Split(s[0], ", ")) != 4 {
+		return
+	}
+
 	for i := 0; i < len(s); i++ {
 		h.data.Table.Cars = append(h.data.Table.Cars, Car{strings.Split(s[i], ", ")[0], strings.Split(s[i], ", ")[1], strings.Split(s[i], ", ")[2], strings.Split(s[i], ", ")[3]})
 	}
@@ -32,30 +36,30 @@ func (h *Handler) NewCars(s []string) {
 func (h *Handler) AddData(s string) error {
 	if h.mood == "/create" {
 		switch true {
-		case s == "":
+		case s == "" || strings.HasPrefix(s, "/"):
 			return nil
 
-		case h.data.Event == "" && isDate(s) != "" && isTime(s) != "":
+		case h.data.Event == "" && isDate(s) != "":
 			h.data.Event = s
 
-		case h.data.How == "" && h.data.Event != "" && isDate(s) != "" && isTime(s) != "":
+		case h.data.How == "" && h.data.Event != "" && isDate(s) != "":
 			h.data.How = s
 
-		case h.data.Date == "" && h.data.How != "" && isDate(s) == "" && isTime(s) != "":
+		case h.data.Date == "" && h.data.How != "" && isDate(s) == "":
 			h.data.Date = s
 
-		case h.data.Time == "" && h.data.Date != "" && isDate(s) != "" && isTime(s) == "":
+		case h.data.Time == "" && h.data.Date != "" && isDate(s) != "":
 			h.data.Time = s
 
-		case h.data.Table.Items == nil && h.data.Time != "" && isDate(s) != "" && isTime(s) != "":
+		case h.data.Table.Items == nil && h.data.Time != "" && isDate(s) != "" && strings.Count(strings.Split(s, " | ")[0], ", ") == 1:
 			h.NewItems(strings.Split(s, " | "))
 
-		case h.data.Table.Cars == nil && h.data.Table.Items != nil && isDate(s) != "" && isTime(s) != "":
+		case h.data.Table.Cars == nil && isDate(s) != "" && strings.Count(strings.Split(s, " | ")[0], ", ") == 3:
 			h.NewCars(strings.Split(s, " | "))
 		}
 	} else if h.mood == "/list" {
 		switch true {
-		case strings.HasPrefix(s, "/") || s == "" || strings.HasPrefix(s, "id: "):
+		case strings.HasPrefix(s, "/") || s == "" || strings.Contains(s, "id: "):
 			return nil
 
 		case strings.HasSuffix(s, ".docx"):
@@ -63,13 +67,13 @@ func (h *Handler) AddData(s string) error {
 				return fmt.Errorf("failed to assign doc to handler: %s", err.Error())
 			}
 
-		case h.data.Date == "" && isDate(s) == "" && isTime(s) != "":
+		case h.data.Date == "" && isDate(s) == "":
 			h.data.Date = s
 
-		case h.data.Table.Items == nil && isDate(s) != "" && isTime(s) != "":
+		case h.data.Table.Items == nil && isDate(s) != "" && strings.Count(strings.Split(s, " | ")[0], ", ") == 1:
 			h.NewItems(strings.Split(s, " | "))
 
-		case h.data.Table.Cars == nil && isDate(s) != "" && isTime(s) != "":
+		case h.data.Table.Cars == nil && isDate(s) != "" && strings.Count(strings.Split(s, " | ")[0], ", ") == 3:
 			h.NewCars(strings.Split(s, " | "))
 		}
 	}
@@ -101,15 +105,6 @@ func isDate(s string) string {
 	_, err := time.Parse("02.01.2006", s)
 	if err != nil {
 		return fmt.Sprintf("invalid date format: %s", err.Error())
-	}
-
-	return ""
-}
-
-func isTime(s string) string {
-	_, err := time.Parse("15:04", s)
-	if err != nil {
-		return fmt.Sprintf("invalid time format: %s", err.Error())
 	}
 
 	return ""

@@ -179,7 +179,7 @@ func (h *Handler) GetListOfCars() ([][]string, error) {
 	return lst, nil
 }
 
-func (h *Handler) EditRow(id string) error {
+func (h *Handler) EditItemRow(id string) error {
 	for i := 1; strconv.Itoa(i) == h.doc.Doc.Tables()[1].Rows()[i].Cells()[0].Paragraphs()[0].Runs()[0].Text(); i++ {
 		if strconv.Itoa(i) == id {
 			h.doc.Doc.Tables()[1].Rows()[i].Cells()[1].Paragraphs()[0].Runs()[0].ClearContent()
@@ -196,13 +196,13 @@ func (h *Handler) EditRow(id string) error {
 	return nil
 }
 
-func (h *Handler) AddRow() error {
-	rows, err := h.GetListOfItems()
+func (h *Handler) AddItemRow() error {
+	items, err := h.GetListOfItems()
 	if err != nil {
 		return fmt.Errorf("failed to get list of items: %s", err.Error())
 	}
 
-	id := len(rows)
+	id := len(items)
 
 	for i := 0; i < len(h.data.Table.Items); i++ {
 		row := h.doc.Doc.Tables()[1].InsertRowAfter(h.doc.Doc.Tables()[1].Rows()[id])
@@ -213,6 +213,61 @@ func (h *Handler) AddRow() error {
 		row.Cells()[0].Paragraphs()[0].AddRun().AddText(strconv.Itoa(id + 1))
 		row.Cells()[1].Paragraphs()[0].AddRun().AddText(h.data.Table.Items[i].Name)
 		row.Cells()[2].Paragraphs()[0].AddRun().AddText(h.data.Table.Items[i].Count)
+		id++
+	}
+
+	if err := h.doc.Doc.SaveToFile(h.doc.DocPath); err != nil {
+		return fmt.Errorf("failed to save edit file: %s", err.Error())
+	}
+
+	return nil
+}
+
+func (h *Handler) EditCarRow(id string) error {
+	items, err := h.GetListOfItems()
+	if err != nil {
+		return fmt.Errorf("failed to get list of items: %s", err.Error())
+	}
+
+	for i := len(items) + 2; i < len(h.doc.Doc.Tables()[1].Rows()); i++ {
+		if h.doc.Doc.Tables()[1].Rows()[i].Cells()[0].Paragraphs()[0].Runs()[0].Text() == id {
+			for j := 1; j < 5; j++ {
+				h.doc.Doc.Tables()[1].Rows()[i].Cells()[j].Paragraphs()[0].Runs()[0].ClearContent()
+			}
+
+			h.doc.Doc.Tables()[1].Rows()[i].Cells()[1].Paragraphs()[0].Runs()[0].AddText(h.data.Table.Cars[0].Brand)
+			h.doc.Doc.Tables()[1].Rows()[i].Cells()[2].Paragraphs()[0].Runs()[0].AddText(h.data.Table.Cars[0].Number)
+			h.doc.Doc.Tables()[1].Rows()[i].Cells()[3].Paragraphs()[0].Runs()[0].AddText(h.data.Table.Cars[0].FullName)
+			h.doc.Doc.Tables()[1].Rows()[i].Cells()[4].Paragraphs()[0].Runs()[0].AddText(h.data.Table.Cars[0].Telephone)
+		}
+	}
+
+	if err := h.doc.Doc.SaveToFile(h.doc.DocPath); err != nil {
+		return fmt.Errorf("failed to save edit file: %s", err.Error())
+	}
+
+	return nil
+}
+
+func (h *Handler) AddCarRow() error {
+	cars, err := h.GetListOfCars()
+	if err != nil {
+		return fmt.Errorf("failed to get list of cars: %s", err.Error())
+	}
+
+	id := len(h.doc.Doc.Tables()[1].Rows()) - len(cars)
+
+	for i := 0; i < len(h.data.Table.Cars); i++ {
+		row := h.doc.Doc.Tables()[1].InsertRowAfter(h.doc.Doc.Tables()[1].Rows()[id])
+		for j := 0; j < 5; j++ {
+			row.AddCell().AddParagraph()
+		}
+
+		row.Cells()[0].Paragraphs()[0].AddRun().AddText(strconv.Itoa(i + 1))
+		row.Cells()[1].Paragraphs()[0].AddRun().AddText(h.data.Table.Cars[i].Brand)
+		row.Cells()[2].Paragraphs()[0].AddRun().AddText(h.data.Table.Cars[i].Number)
+		row.Cells()[3].Paragraphs()[0].AddRun().AddText(h.data.Table.Cars[i].FullName)
+		row.Cells()[4].Paragraphs()[0].AddRun().AddText(h.data.Table.Cars[i].Telephone)
 		id++
 	}
 

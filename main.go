@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"os"
 
 	"github.com/joho/godotenv"
@@ -21,6 +22,6 @@ func main() {
 	}
 
 	if err := h.Run(); err != nil {
-		panic(err)
+		log.Fatalf("failed to run bot: %s", err.Error())
 	}
 }
