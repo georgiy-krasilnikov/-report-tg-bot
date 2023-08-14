@@ -70,7 +70,7 @@ func (h *Handler) CreateBranch(chatID int64, s string) error {
 		class = s
 		msg = tg.NewMessage(chatID, "Сначала введи мероприятие, для которого тебе нужен рапорт, начиная со слов после _В связи с_. *Пример:* _редакторским просмотром фестиваля творчества \"Студенческая весна\"_.")
 
-	case h.data.How == "" && h.data.Event != "":
+	case h.data.How == "" && h.data.Event != "" && class == "/item-raport":
 		msg = tg.NewMessage(chatID, "Теперь выбери, каким образом ты будешь выносить предметы:")
 		msg.ReplyMarkup = tg.NewInlineKeyboardMarkup(
 			tg.NewInlineKeyboardRow(
@@ -88,7 +88,7 @@ func (h *Handler) CreateBranch(chatID int64, s string) error {
 	case (h.data.Table.Items == nil && h.data.Time != "" && class == "/item-raport") || (h.data.Table.Items == nil && h.data.Time != "" && class == "/full-raport"):
 		msg = tg.NewMessage(chatID, "Теперь введи предметы, которые ты собираешься добавить в рапорт. Для рапорта нужны следующие параметры: наименование предмета и его количество. *Пример:* _Стул, 2_. Если у тебя *несколько предметов*, то пиши их так: _Стул, 2 | Стол, 1_.")
 
-	case (h.data.Table.Cars == nil && class == "/car-raport") || (h.data.Table.Cars == nil && class == "/full-raport"):
+	case (h.data.Table.Cars == nil && h.data.Time != "" && class == "/car-raport") || (h.data.Table.Cars == nil && h.data.Time != "" && class == "/full-raport"):
 		msg = tg.NewMessage(chatID, "Теперь введи данные автомобилей, которые ты собираешься добавить. Для рапорта нужны следующие параметры: марка автомобиля, его госномер, его ФИО, и его номер телефона. *Пример:* _Volkswagen Polo, А000ВС77, Иванов Иван Иванович, +78005553535_. Если у тебя *несколько автомобилей*, то пиши их так: _Volkswagen Polo, А000ВС77, Иванов Иван Иванович, +78005553535 | Kia Rio, А111ВС77, Александров Александр Александрович, +78005554545_.")
 
 	case (class == "/item-raport" && h.data.Table.Items != nil && h.data.Table.Cars == nil) || (class == "/car-raport" && h.data.Table.Cars != nil && h.data.Table.Items == nil) || (class == "/full-raport" && h.data.Table.Cars != nil && h.data.Table.Items != nil):

@@ -37,6 +37,9 @@ func (h *Handler) AddData(s string) error {
 
 		case h.data.Event == "" && isDate(s) != "":
 			h.data.Event = s
+			if class == "/car-raport" || class == "/full-raport" {
+				h.data.How = "гаражный въезд"
+			}
 
 		case h.data.How == "" && h.data.Event != "" && isDate(s) != "":
 			h.data.How = s
