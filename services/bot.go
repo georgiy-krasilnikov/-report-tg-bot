@@ -45,6 +45,7 @@ func (h *Handler) CreateBranch(chatID int64, s string) error {
 	if err := h.AddData(s); err != nil {
 		return fmt.Errorf("failed to add data in 'Create' branch: %s", err.Error())
 	}
+	fmt.Println(h.data)
 
 	var msg tg.MessageConfig
 
@@ -219,7 +220,7 @@ func (h *Handler) ListBranch(chatID int64, s string) error {
 		msg = tg.NewMessage(chatID, "Теперь введи данные автомобилей, которые ты собираешься добавить. Для рапорта нужны следующие параметры: марка автомобиля, его госномер, его ФИО, и его номер телефона. *Пример:* _Volkswagen Polo, А000ВС77, Иванов Иван Иванович, +78005553535_. Если у тебя *несколько автомобилей*, то пиши их так: _Volkswagen Polo, А000ВС77, Иванов Иван Иванович, +78005553535 | Kia Rio, А111ВС77, Александров Александр Александрович, +78005554545_.")
 
 	case h.data.Table.Cars != nil && id != "":
-		if err := h.EditCarRow(id); err != nil {
+		if err := h.EditCarRow(&id); err != nil {
 			return fmt.Errorf("failed to edit car row in document: %s", err.Error())
 		}
 
@@ -230,8 +231,7 @@ func (h *Handler) ListBranch(chatID int64, s string) error {
 		return nil
 
 	case h.data.Table.Items != nil && id != "":
-
-		if err := h.EditItemRow(id); err != nil {
+		if err := h.EditItemRow(&id); err != nil {
 			return fmt.Errorf("failed to edit item row in document: %s", err.Error())
 		}
 

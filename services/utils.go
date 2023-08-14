@@ -82,19 +82,26 @@ func (h *Handler) AddData(s string) error {
 
 func newKeyboard(lst, data []string) tg.InlineKeyboardMarkup {
 	var kbrd [][]tg.InlineKeyboardButton
-	size := 2
 
-	for i := 0; i < len(lst); i += 2 {
-		if len(lst)-i == 1 || len(lst[i]) > 36 {
-			size = 1
+	if strings.Count(lst[0], "|") == 1 || !strings.Contains(lst[0], "|") {
+		size := 2
+		for i := 0; i < len(lst); i += 2 {
+			if len(lst)-i == 1 {
+				size = 1
+			}
+
+			var btns []tg.InlineKeyboardButton
+			for j := i; len(btns) < size; j++ {
+				btns = append(btns, tg.NewInlineKeyboardButtonData(lst[j], data[j]))
+			}
+
+			kbrd = append(kbrd, btns)
 		}
-
-		var btns []tg.InlineKeyboardButton
-		for j := i; len(btns) < size; j++ {
-			btns = append(btns, tg.NewInlineKeyboardButtonData(lst[j], data[j]))
+	} else if strings.Count(lst[0], "|") == 3 {
+		for i := 0; i < len(lst); i++ {
+			var btns = []tg.InlineKeyboardButton{tg.NewInlineKeyboardButtonData(lst[i], data[i])}
+			kbrd = append(kbrd, btns)
 		}
-
-		kbrd = append(kbrd, btns)
 	}
 
 	return tg.InlineKeyboardMarkup{InlineKeyboard: kbrd}
