@@ -24,17 +24,13 @@ func (h *Handler) NewItems(s []string) {
 }
 
 func (h *Handler) NewCars(s []string) {
-	if len(strings.Split(s[0], ", ")) != 4 {
-		return
-	}
-
 	for i := 0; i < len(s); i++ {
 		h.data.Table.Cars = append(h.data.Table.Cars, Car{strings.Split(s[i], ", ")[0], strings.Split(s[i], ", ")[1], strings.Split(s[i], ", ")[2], strings.Split(s[i], ", ")[3]})
 	}
 }
 
 func (h *Handler) AddData(s string) error {
-	if h.mood == "/create" {
+	if mode == "/create" {
 		switch true {
 		case s == "" || strings.HasPrefix(s, "/"):
 			return nil
@@ -57,7 +53,7 @@ func (h *Handler) AddData(s string) error {
 		case h.data.Table.Cars == nil && isDate(s) != "" && strings.Count(strings.Split(s, " | ")[0], ", ") == 3:
 			h.NewCars(strings.Split(s, " | "))
 		}
-	} else if h.mood == "/list" {
+	} else if mode == "/list" {
 		switch true {
 		case strings.HasPrefix(s, "/") || s == "" || strings.Contains(s, "id: "):
 			return nil

@@ -7,7 +7,10 @@ import (
 	tg "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
-var id string
+var (
+	id    string
+	class string
+)
 
 func (h *Handler) Start(chatID int64) error {
 	msg := tg.NewMessage(chatID, "Привет! Для начала выбери, что ты хочешь сделать.")
@@ -17,7 +20,6 @@ func (h *Handler) Start(chatID int64) error {
 			tg.NewInlineKeyboardButtonData("Выбрать рапорт из списка", "/list"),
 		),
 	)
-
 	if _, err := h.Send(msg); err != nil {
 		return fmt.Errorf("failed to send 'start' msg: %s", err.Error())
 	}
@@ -26,7 +28,7 @@ func (h *Handler) Start(chatID int64) error {
 }
 
 func (h *Handler) Next(chatID int64, s string) error {
-	if h.mood == "/create" {
+	if mode == "/create" {
 		if err := h.CreateBranch(chatID, s); err != nil {
 			return fmt.Errorf("error in 'Create' branch: %s", err.Error())
 		}
@@ -51,6 +53,21 @@ func (h *Handler) CreateBranch(chatID int64, s string) error {
 		return fmt.Errorf("s can't be empty")
 
 	case s == "/create":
+		msg = tg.NewMessage(chatID, "Сначала выбери, какой вид рапорта тебе нужен:")
+		msg.ReplyMarkup = tg.NewInlineKeyboardMarkup(
+			tg.NewInlineKeyboardRow(
+				tg.NewInlineKeyboardButtonData("Рапорт на вынос предметов", "/item-raport"),
+			),
+			tg.NewInlineKeyboardRow(
+				tg.NewInlineKeyboardButtonData("Рапорт на въезд-выезд", "/car-raport"),
+			),
+			tg.NewInlineKeyboardRow(
+				tg.NewInlineKeyboardButtonData("Рапорт и на вынос предметов, и на въезд-выезд", "/full-raport"),
+			),
+		)
+
+	case s == "/car-raport" || s == "/item-raport" || s == "/full-raport":
+		class = s
 		msg = tg.NewMessage(chatID, "Сначала введи мероприятие, для которого тебе нужен рапорт, начиная со слов после _В связи с_. *Пример:* _редакторским просмотром фестиваля творчества \"Студенческая весна\"_.")
 
 	case h.data.How == "" && h.data.Event != "":
@@ -68,13 +85,13 @@ func (h *Handler) CreateBranch(chatID int64, s string) error {
 	case h.data.Time == "" && h.data.Date != "" && h.data.Event != "":
 		msg = tg.NewMessage(chatID, "Теперь введи время. *Пример:* _9:00 до 12:00_.")
 
-	case h.data.Table.Items == nil && h.data.Time != "" && h.data.Table.Cars == nil && s != "/empty":
-		msg = tg.NewMessage(chatID, "Теперь введи предметы, которые ты собираешься добавить в рапорт. Для рапорта нужны следующие параметры: наименование предмета и его количество. *Пример:* _Стул, 2_. Если у тебя *несколько предметов*, то пиши их так: _Стул, 2 | Стол, 1_. Если ты не хочешь добавлть предметы, а хочешь добавить только автомобили, то отправь */empty*.")
+	case (h.data.Table.Items == nil && h.data.Time != "" && class == "/item-raport") || (h.data.Table.Items == nil && h.data.Time != "" && class == "/full-raport"):
+		msg = tg.NewMessage(chatID, "Теперь введи предметы, которые ты собираешься добавить в рапорт. Для рапорта нужны следующие параметры: наименование предмета и его количество. *Пример:* _Стул, 2_. Если у тебя *несколько предметов*, то пиши их так: _Стул, 2 | Стол, 1_.")
 
-	case (h.data.Table.Items != nil && h.data.Table.Cars == nil && s != "/empty") || (h.data.Table.Items == nil && h.data.Table.Cars == nil && s == "/empty"):
-		msg = tg.NewMessage(chatID, "Теперь введи данные автомобилей, которые ты собираешься добавить. Если ты не собираешься добавлять автомобили в рапорт, то отправь */empty*. Для рапорта нужны следующие параметры: марка автомобиля, его госномер, его ФИО, и его номер телефона. *Пример:* _Volkswagen Polo, А000ВС77, Иванов Иван Иванович, +78005553535_. Если у тебя *несколько автомобилей*, то пиши их так: _Volkswagen Polo, А000ВС77, Иванов Иван Иванович, +78005553535 | Kia Rio, А111ВС77, Александров Александр Александрович, +78005554545_.")
+	case (h.data.Table.Cars == nil && class == "/car-raport") || (h.data.Table.Cars == nil && class == "/full-raport"):
+		msg = tg.NewMessage(chatID, "Теперь введи данные автомобилей, которые ты собираешься добавить. Для рапорта нужны следующие параметры: марка автомобиля, его госномер, его ФИО, и его номер телефона. *Пример:* _Volkswagen Polo, А000ВС77, Иванов Иван Иванович, +78005553535_. Если у тебя *несколько автомобилей*, то пиши их так: _Volkswagen Polo, А000ВС77, Иванов Иван Иванович, +78005553535 | Kia Rio, А111ВС77, Александров Александр Александрович, +78005554545_.")
 
-	case (s == "/empty" && h.data.Table.Items != nil) || h.data.Table.Cars != nil || (s == "/empty" && h.data.Table.Cars != nil):
+	case (class == "/item-raport" && h.data.Table.Items != nil && h.data.Table.Cars == nil) || (class == "/car-raport" && h.data.Table.Cars != nil && h.data.Table.Items == nil) || (class == "/full-raport" && h.data.Table.Cars != nil && h.data.Table.Items != nil):
 		if err := h.CreateDocument(); err != nil {
 			return fmt.Errorf("failed to create document: %s", err.Error())
 		}
@@ -199,7 +216,7 @@ func (h *Handler) ListBranch(chatID int64, s string) error {
 		msg = tg.NewMessage(chatID, "Теперь введи предметы, которые ты собираешься добавить. Для рапорта нужны следующие параметры: наименование предмета и его количество. *Пример:* _Стул, 2_. Если у тебя *несколько предметов*, то пиши их так: _Стул, 2 | Стол, 1_.")
 
 	case s == "/add car":
-		msg = tg.NewMessage(chatID, "Теперь введи данные автомобилей, которые ты собираешься добавить. Для рапорта нужны следующие параметры: марка автомобиля, его госномер, его ФИО, и его номер телефона. *Пример:* _Volkswagen Polo, А000ВС77, Иванов Иван Иванович, +78005553535_. Если у тебя *несколько автомобилей*, то пиши их так: _Volkswagen Polo, А000ВС77, Иванов Иван Иванович, +78005553535 | Kia Rio, А111ВС77, Александров Александр Александрович, +78005554545_.")
+		msg = tg.NewMessage(chatID, "Теперь введи данные автомобилей, которые ты собираешься добавить. Для рапорта нужны следующие параметры: марка автомобиля, его госномер, его ФИО, и его номер телефона. *Пример:* _Volkswagen Polo-А000ВС77-Иванов Иван Иванович-+78005553535_. Если у тебя *несколько автомобилей*, то пиши их так: _Volkswagen Polo, А000ВС77, Иванов Иван Иванович, +78005553535 | Kia Rio, А111ВС77, Александров Александр Александрович, +78005554545_.")
 
 	case h.data.Table.Cars != nil && id != "":
 		if err := h.EditCarRow(id); err != nil {

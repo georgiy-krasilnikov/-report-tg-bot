@@ -6,12 +6,14 @@ import (
 	tg "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
+var mode string
+
 type Handler struct {
-	mood string
 	*tg.BotAPI
 	data *Data
 	doc  *Doc
 }
+var gos string
 
 func New(botToken string) (*Handler, error) {
 	bot, err := tg.NewBotAPI(botToken)
@@ -20,7 +22,6 @@ func New(botToken string) (*Handler, error) {
 	}
 
 	return &Handler{
-		"",
 		bot,
 		&Data{},
 		&Doc{},
@@ -47,9 +48,9 @@ func (h *Handler) Run() error {
 
 		case u.Message == nil && u.CallbackQuery != nil:
 			if u.CallbackData() == "/create" {
-				h.mood = "/create"
+				mode = "/create"
 			} else if u.CallbackData() == "/list" {
-				h.mood = "/list"
+				mode = "/list"
 			}
 
 			if err := h.Next(u.CallbackQuery.Message.Chat.ID, u.CallbackData()); err != nil {
