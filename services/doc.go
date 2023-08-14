@@ -256,6 +256,9 @@ func (h *Handler) AddCarRow() error {
 	}
 
 	id := len(h.doc.Doc.Tables()[1].Rows()) - len(cars)
+	if id == len(h.doc.Doc.Tables()[1].Rows()) {
+		id -= 1
+	}
 
 	for i := 0; i < len(h.data.Table.Cars); i++ {
 		row := h.doc.Doc.Tables()[1].InsertRowAfter(h.doc.Doc.Tables()[1].Rows()[id])
