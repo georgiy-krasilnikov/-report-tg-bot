@@ -259,8 +259,16 @@ func (h *Handler) AddCarRow() error {
 
 	id := len(h.doc.Doc.Tables()[1].Rows()) - len(cars)
 	if id == len(h.doc.Doc.Tables()[1].Rows()) {
+		s := h.doc.Doc.Paragraphs()[6].Runs()[0].Text()
+		if strings.Contains(s, "КПП №1") {
+			h.doc.Doc.Paragraphs()[6].RemoveRun(h.doc.Doc.Paragraphs()[6].Runs()[0])
+			s = strings.ReplaceAll(s, "КПП №1", "гаражный въезд")
+			h.doc.Doc.Paragraphs()[6].AddRun().AddText(s)
+		}
+		
 		id -= 1
 	}
+	
 
 	for i := 0; i < len(h.data.Table.Cars); i++ {
 		row := h.doc.Doc.Tables()[1].InsertRowAfter(h.doc.Doc.Tables()[1].Rows()[id])
