@@ -45,7 +45,6 @@ func (h *Handler) CreateBranch(chatID int64, s string) error {
 	if err := h.AddData(s); err != nil {
 		return fmt.Errorf("failed to add data in 'Create' branch: %s", err.Error())
 	}
-	fmt.Println(h.data)
 
 	var msg tg.MessageConfig
 
