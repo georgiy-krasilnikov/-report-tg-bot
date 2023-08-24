@@ -8,15 +8,6 @@ import (
 	tg "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
-func (h *Handler) DeleteMessage(chatID int64, msgID int) error {
-	_, err := h.Request(tg.NewDeleteMessage(chatID, msgID))
-	if err != nil {
-		return fmt.Errorf("failed to send request: %s", err.Error())
-	}
-
-	return nil
-}
-
 func (h *Handler) NewItems(s []string) {
 	for i := 0; i < len(s); i++ {
 		h.data.Table.Items = append(h.data.Table.Items, Item{strings.Split(s[i], ", ")[0], strings.Split(s[i], ", ")[1]})

@@ -13,7 +13,6 @@ type Handler struct {
 	data *Data
 	doc  *Doc
 }
-var gos string
 
 func New(botToken string) (*Handler, error) {
 	bot, err := tg.NewBotAPI(botToken)
@@ -35,7 +34,7 @@ func (h *Handler) Run() error {
 
 	upd := tg.NewUpdate(0)
 	upd.Timeout = 60
-	//h.Debug = true
+	h.Debug = true
 	upds := h.GetUpdatesChan(upd)
 
 	for u := range upds {
@@ -57,18 +56,14 @@ func (h *Handler) Run() error {
 				return fmt.Errorf("error in 'next' func: %s", err.Error())
 			}
 
-			if err := h.DeleteMessage(u.CallbackQuery.Message.Chat.ID, u.CallbackQuery.Message.MessageID); err != nil {
-				return fmt.Errorf("failed to delete msg: %s", err.Error())
-			}
+			_, _ = h.Request(tg.NewDeleteMessage(u.CallbackQuery.Message.Chat.ID, u.CallbackQuery.Message.MessageID))
 
 		case u.Message != nil && u.Message.Text != "/start":
 			if err := h.Next(u.Message.Chat.ID, u.Message.Text); err != nil {
 				return fmt.Errorf("error in 'next' func: %s", err.Error())
 			}
+			_, _ = h.Request(tg.NewDeleteMessage(u.Message.Chat.ID, u.Message.MessageID))
 
-			if err := h.DeleteMessage(u.Message.Chat.ID, u.Message.MessageID-1); err != nil {
-				return fmt.Errorf("failed to delete msg: %s", err.Error())
-			}
 		}
 	}
 

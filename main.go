@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"os"
 
@@ -12,14 +11,14 @@ import (
 
 func main() {
 	if err := godotenv.Load(); err != nil {
-		fmt.Println(err)
+		log.Fatalf("failed to load .env: %s", err.Error())
 	}
 
 	botToken := os.Getenv("BOT_TOKEN")
 
 	h, err := services.New(botToken)
 	if err != nil {
-		panic(err)
+		log.Fatalf("failed to create botAPI: %s", err.Error())
 	}
 
 	if err := h.Run(); err != nil {
