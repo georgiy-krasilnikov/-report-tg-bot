@@ -56,13 +56,13 @@ func (h *Handler) Run() error {
 				return fmt.Errorf("error in 'next' func: %s", err.Error())
 			}
 
-			_, _ = h.Request(tg.NewDeleteMessage(u.CallbackQuery.Message.Chat.ID, u.CallbackQuery.Message.MessageID))
+			_, _ = h.Request(tg.NewDeleteMessage(u.CallbackQuery.Message.Chat.ID, u.CallbackQuery.Message.MessageID-1))
 
 		case u.Message != nil && u.Message.Text != "/start":
 			if err := h.Next(u.Message.Chat.ID, u.Message.Text); err != nil {
 				return fmt.Errorf("error in 'next' func: %s", err.Error())
 			}
-			_, _ = h.Request(tg.NewDeleteMessage(u.Message.Chat.ID, u.Message.MessageID))
+			_, _ = h.Request(tg.NewDeleteMessage(u.Message.Chat.ID, u.Message.MessageID-1))
 
 		}
 	}
