@@ -34,7 +34,7 @@ func (h *Handler) Run() error {
 
 	upd := tg.NewUpdate(0)
 	upd.Timeout = 60
-	h.Debug = true
+	//h.Debug = true
 	upds := h.GetUpdatesChan(upd)
 
 	for u := range upds {
@@ -56,7 +56,7 @@ func (h *Handler) Run() error {
 				return fmt.Errorf("error in 'next' func: %s", err.Error())
 			}
 
-			_, _ = h.Request(tg.NewDeleteMessage(u.CallbackQuery.Message.Chat.ID, u.CallbackQuery.Message.MessageID-1))
+			_, _ = h.Request(tg.NewDeleteMessage(u.CallbackQuery.Message.Chat.ID, u.CallbackQuery.Message.MessageID))
 
 		case u.Message != nil && u.Message.Text != "/start":
 			if err := h.Next(u.Message.Chat.ID, u.Message.Text); err != nil {

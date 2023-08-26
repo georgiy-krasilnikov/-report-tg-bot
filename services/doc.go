@@ -8,6 +8,8 @@ import (
 	"strings"
 
 	"baliance.com/gooxml/document"
+	// "baliance.com/gooxml/measurement"
+	// "baliance.com/gooxml/schema/soo/wml"
 	"github.com/lukasjarosch/go-docx"
 )
 
@@ -123,9 +125,8 @@ func GetListOfDocuments() ([]string, error) {
 // }
 
 func (h *Handler) EditDate() error {
-	h.doc.Doc.Paragraphs()[4].AddRun().AddText(h.data.Date)
-	h.doc.Doc.Paragraphs()[4].SetStyle("Text Body")
-	h.doc.Doc.Paragraphs()[4].RemoveRun(h.doc.Doc.Paragraphs()[4].Runs()[0])
+	h.doc.Doc.Paragraphs()[4].Runs()[0].Clear()
+	h.doc.Doc.Paragraphs()[4].Runs()[0].AddText(h.data.Date)
 
 	if err := os.Remove(h.doc.DocPath); err != nil {
 		return fmt.Errorf("failed to remove document: %s", err.Error())
@@ -265,10 +266,9 @@ func (h *Handler) AddCarRow() error {
 			s = strings.ReplaceAll(s, "КПП №1", "гаражный въезд")
 			h.doc.Doc.Paragraphs()[6].AddRun().AddText(s)
 		}
-		
+
 		id -= 1
 	}
-	
 
 	for i := 0; i < len(h.data.Table.Cars); i++ {
 		row := h.doc.Doc.Tables()[1].InsertRowAfter(h.doc.Doc.Tables()[1].Rows()[id])

@@ -161,7 +161,7 @@ func (h *Handler) ListBranch(chatID int64, s string) error {
 	case s == "/date":
 		msg = tg.NewMessage(chatID, "Теперь введи новую дату в следующем формате: _дд.мм.гггг_. *Пример:* _31.12.2022_.")
 
-	case isDate(s) == "":
+	case strings.Contains(s, "202"):
 		if err := h.EditDate(); err != nil {
 			return fmt.Errorf("failed to edit date in document: %s", err.Error())
 		}

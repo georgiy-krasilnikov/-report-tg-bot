@@ -3,7 +3,6 @@ package services
 import (
 	"fmt"
 	"strings"
-	"time"
 
 	tg "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
@@ -26,25 +25,25 @@ func (h *Handler) AddData(s string) error {
 		case s == "" || strings.HasPrefix(s, "/"):
 			return nil
 
-		case h.data.Event == "" && isDate(s) != "":
+		case h.data.Event == "":
 			h.data.Event = s
 			if class == "/car-raport" || class == "/full-raport" {
 				h.data.How = "гаражный въезд"
 			}
 
-		case h.data.How == "" && h.data.Event != "" && isDate(s) != "":
+		case h.data.How == "" && h.data.Event != "":
 			h.data.How = s
 
-		case h.data.Date == "" && h.data.How != "" && isDate(s) == "":
+		case h.data.Date == "" && h.data.How != "":
 			h.data.Date = s
 
-		case h.data.Time == "" && h.data.Date != "" && isDate(s) != "":
+		case h.data.Time == "" && h.data.Date != "":
 			h.data.Time = s
 
-		case h.data.Table.Items == nil && h.data.Time != "" && isDate(s) != "" && strings.Count(strings.Split(s, " | ")[0], ", ") == 1:
+		case h.data.Table.Items == nil && h.data.Time != "" && strings.Count(strings.Split(s, " | ")[0], ", ") == 1:
 			h.NewItems(strings.Split(s, " | "))
 
-		case h.data.Table.Cars == nil && isDate(s) != "" && strings.Count(strings.Split(s, " | ")[0], ", ") == 3:
+		case h.data.Table.Cars == nil && strings.Count(strings.Split(s, " | ")[0], ", ") == 3:
 			h.NewCars(strings.Split(s, " | "))
 		}
 	} else if mode == "/list" {
@@ -57,13 +56,13 @@ func (h *Handler) AddData(s string) error {
 				return fmt.Errorf("failed to assign doc to handler: %s", err.Error())
 			}
 
-		case h.data.Date == "" && isDate(s) == "":
+		case h.data.Date == "":
 			h.data.Date = s
 
-		case h.data.Table.Items == nil && isDate(s) != "" && strings.Count(strings.Split(s, " | ")[0], ", ") == 1:
+		case h.data.Table.Items == nil && strings.Count(strings.Split(s, " | ")[0], ", ") == 1:
 			h.NewItems(strings.Split(s, " | "))
 
-		case h.data.Table.Cars == nil && isDate(s) != "" && strings.Count(strings.Split(s, " | ")[0], ", ") == 3:
+		case h.data.Table.Cars == nil && strings.Count(strings.Split(s, " | ")[0], ", ") == 3:
 			h.NewCars(strings.Split(s, " | "))
 		}
 	}
@@ -96,13 +95,4 @@ func newKeyboard(lst, data []string) tg.InlineKeyboardMarkup {
 	}
 
 	return tg.InlineKeyboardMarkup{InlineKeyboard: kbrd}
-}
-
-func isDate(s string) string {
-	_, err := time.Parse("02.01.2006", s)
-	if err != nil {
-		return fmt.Sprintf("invalid date format: %s", err.Error())
-	}
-
-	return ""
 }
