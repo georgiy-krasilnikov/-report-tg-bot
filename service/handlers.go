@@ -1,17 +1,17 @@
-package services
+package service
 
 import (
 	"fmt"
 
+	"report-bot/doc"
+
 	tg "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
-var mode string
-
 type Handler struct {
 	*tg.BotAPI
-	data *Data
-	doc  *Doc
+	data *doc.Data
+	doc  *doc.Doc
 }
 
 func New(botToken string) (*Handler, error) {
@@ -22,8 +22,8 @@ func New(botToken string) (*Handler, error) {
 
 	return &Handler{
 		bot,
-		&Data{},
-		&Doc{},
+		&doc.Data{},
+		&doc.Doc{},
 	}, nil
 }
 
@@ -40,16 +40,16 @@ func (h *Handler) Run() error {
 	for u := range upds {
 		switch true {
 		case u.Message != nil && u.Message.Text == "/start":
-			h.data = &Data{}
+			h.data = &doc.Data{}
 			if err := h.Start(u.Message.Chat.ID); err != nil {
 				return fmt.Errorf("error in 'start' func: %s", err.Error())
 			}
 
 		case u.Message == nil && u.CallbackQuery != nil:
 			if u.CallbackData() == "/create" {
-				mode = "/create"
+				Mode = "/create"
 			} else if u.CallbackData() == "/list" {
-				mode = "/list"
+				Mode = "/list"
 			}
 
 			if err := h.Next(u.CallbackQuery.Message.Chat.ID, u.CallbackData()); err != nil {
@@ -63,7 +63,6 @@ func (h *Handler) Run() error {
 				return fmt.Errorf("error in 'next' func: %s", err.Error())
 			}
 			_, _ = h.Request(tg.NewDeleteMessage(u.Message.Chat.ID, u.Message.MessageID-1))
-
 		}
 	}
 

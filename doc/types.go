@@ -1,4 +1,4 @@
-package services
+package doc
 
 import (
 	"baliance.com/gooxml/document"
@@ -14,8 +14,8 @@ type Data struct {
 }
 
 type Table struct {
-	Items       []Item
-	Cars        []Car
+	Items []Item
+	Cars  []Car
 }
 
 type Item struct {

@@ -4,9 +4,9 @@ import (
 	"log"
 	"os"
 
-	"github.com/joho/godotenv"
+	"report-bot/service"
 
-	"report-bot/services"
+	"github.com/joho/godotenv"
 )
 
 func main() {
@@ -16,7 +16,7 @@ func main() {
 
 	botToken := os.Getenv("BOT_TOKEN")
 
-	h, err := services.New(botToken)
+	h, err := service.New(botToken)
 	if err != nil {
 		log.Fatalf("failed to create botAPI: %s", err.Error())
 	}
