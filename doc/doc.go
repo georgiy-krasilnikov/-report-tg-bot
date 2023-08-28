@@ -12,14 +12,14 @@ import (
 )
 
 func (d *Data) NewDocX() (*Doc, error) {
-	doc, err := docx.Open("file.docx")
+	doc, err := docx.Open("docs/file.docx")
 	if err != nil {
 		return nil, fmt.Errorf("failed to open doc: %s", err.Error())
 	}
 
 	return &Doc{
 		DocName: "Рапорт." + d.Date + ".docx",
-		DocPath: "docs/Рапорт." + d.Date + ".docx",
+		DocPath: "docs/docs/Рапорт." + d.Date + ".docx",
 		DocX:    doc,
 		ReplaceMap: docx.PlaceholderMap{
 			"дд.мм.гггг": d.Date,
@@ -91,14 +91,14 @@ func (d *Data) CreateDocument() (*Doc, error) {
 }
 
 func GetListOfDocuments() ([]string, error) {
-	matches, err := filepath.Glob("docs/*.docx")
+	matches, err := filepath.Glob("docs/docs/*.docx")
 	if err != nil {
 		return nil, fmt.Errorf("failed to get list of files: %s", err.Error())
 	}
 
 	var docs []string
 	for _, m := range matches {
-		docs = append(docs, strings.TrimPrefix(m, "docs/"))
+		docs = append(docs, strings.TrimPrefix(m, "docs/docs/"))
 	}
 
 	return docs, nil
@@ -130,7 +130,7 @@ func (d *Doc) EditDate(date string) error {
 	}
 
 	d.DocName = "Рапорт." + date + ".docx"
-	d.DocPath = "docs/" + d.DocName
+	d.DocPath = "docs/docs/" + d.DocName
 
 	if err := d.Doc.SaveToFile(d.DocPath); err != nil {
 		return fmt.Errorf("failed to save edit file: %s", err.Error())

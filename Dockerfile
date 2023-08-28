@@ -3,8 +3,6 @@ FROM golang:1.20-alpine as builder
 WORKDIR /
 ADD . .
 
-VOLUME [ "/volume" ]
-
 RUN go build -o /tmp/report-bot main.go
 
 FROM alpine AS runner

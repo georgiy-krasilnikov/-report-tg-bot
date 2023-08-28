@@ -68,7 +68,7 @@ func (h *Handler) AddData(s string) error {
 			return nil
 
 		case strings.HasSuffix(s, ".docx"):
-			doc, err := doc.NewDoc(s, "docs/"+s)
+			doc, err := doc.NewDoc(s, "docs/docs/"+s)
 			if err != nil {
 				return fmt.Errorf("failed to assign doc to handler: %s", err.Error())
 			}

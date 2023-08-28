@@ -6,13 +6,13 @@ import (
 
 	"report-bot/service"
 
-	"github.com/joho/godotenv"
+	//"github.com/joho/godotenv"
 )
 
 func main() {
-	if err := godotenv.Load(); err != nil {
-		log.Fatalf("failed to load .env: %s", err.Error())
-	}
+	// if err := godotenv.Load(); err != nil {
+	// 	log.Fatalf("failed to load .env: %s", err.Error())
+	// }
 
 	botToken := os.Getenv("BOT_TOKEN")
 
